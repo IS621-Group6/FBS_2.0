@@ -29,38 +29,51 @@ Make sure you have installed:
 ```bash
 git clone https://github.com/Cherrilynss/FBS_2.0.git
 cd smu-fbs-3
+```
 
 ## 2. Install dependencies
-Backend
+
+**Backend**
+```bash
 cd backend
 npm install
+```
 
-Frontend
+**Frontend**
+```bash
 cd ../frontend
 npm install
+```
 
-3. Launch the servers
-Terminal A: Backend
+## 3. Launch the servers
+
+**Terminal A: Backend**
+```bash
 cd backend
 node index.js
-
+```
 
 You should see:
-
+```
 Server running on 3001
+```
 
-Terminal B: Frontend
+**Terminal B: Frontend**
+```bash
 cd frontend
 npm run dev
-
+```
 
 You should see something like:
-
+```
 VITE v7.3.1 ready in xxx ms
 Local: http://localhost:5173/
+```
 
-4. Open the app
+## 4. Open the app
 
 Go to your browser and open:
 
+```
 http://localhost:5173
+```
