@@ -18,14 +18,9 @@ function readSql(filePath) {
 }
 
 function execSql(db, sql) {
-  // Simple splitter that works for our files (no semicolons inside strings).
-  const statements = sql
-    .split(/;\s*\n/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-
+  // Execute the full SQL script in a single transaction.
   const tx = db.transaction(() => {
-    for (const stmt of statements) db.exec(stmt + ';')
+    db.exec(sql)
   })
   tx()
 }
