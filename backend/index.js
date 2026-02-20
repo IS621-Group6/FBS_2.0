@@ -598,7 +598,7 @@ app.post("/api/bookings", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("FBS 3.0 backend running");
+  res.send("FBS 2.0 backend running");
 });
 
 app.listen(3001, () => {
