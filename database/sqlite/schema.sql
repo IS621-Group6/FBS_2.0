@@ -33,15 +33,19 @@ CREATE TABLE facilities (
   FOREIGN KEY (facility_type_id) REFERENCES facility_type(facility_type_id)
 );
 
+-- NOTE ON TIMEZONES:
+-- All timestamps in this schema are stored in UTC, encoded as ISO 8601 strings.
+-- booking_date uses an explicit UTC "Z" suffix (e.g. 2026-02-20T10:00:00Z).
 CREATE TABLE bookings (
   booking_id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
-  booking_date TEXT DEFAULT (datetime('now')),
+  booking_date TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
   status TEXT DEFAULT 'CONFIRMED',
   booking_reason TEXT,
   FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
+-- start_time and end_time are also expected to be UTC ISO 8601 strings.
 CREATE TABLE booking_detail (
   booking_id INTEGER NOT NULL,
   facility_id INTEGER NOT NULL,
