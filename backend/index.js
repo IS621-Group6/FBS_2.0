@@ -135,15 +135,12 @@ app.get("/api/facilities", async (req, res) => {
   if (db) {
     try {
       const clauses = ["is_active = 1"];
-      const params = [];
       if (q) {
-        params.push(`%${q}%`);
         clauses.push(
           `(facility_code LIKE ? OR facility_name LIKE ? OR building LIKE ?)`
         );
       }
       if (minCapacity > 0) {
-        params.push(minCapacity);
         clauses.push(`capacity >= ?`);
       }
 
