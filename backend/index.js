@@ -193,7 +193,7 @@ app.get("/api/facilities", async (req, res) => {
       res.json({ items: slice, total, page: safePage, pageSize, pageCount });
       return;
     } catch (e) {
-      void e;
+      console.error("Error while querying facilities from SQLite, falling back to in-memory data:", e);
     }
   }
 
