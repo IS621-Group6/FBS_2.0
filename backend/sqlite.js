@@ -25,9 +25,17 @@ function sqliteHealth() {
 
   try {
     const row = d.prepare('SELECT 1 AS ok').get()
-    return { enabled: true, ok: row?.ok === 1, path: resolveDbPath() }
+    const res = { enabled: true, ok: row?.ok === 1 }
+    if (process.env.NODE_ENV !== 'production') {
+      res.path = resolveDbPath()
+    }
+    return res
   } catch (e) {
-    return { enabled: true, ok: false, path: resolveDbPath(), error: e?.message || String(e) }
+    const res = { enabled: true, ok: false, error: e?.message || String(e) }
+    if (process.env.NODE_ENV !== 'production') {
+      res.path = resolveDbPath()
+    }
+    return res
   }
 }
 
