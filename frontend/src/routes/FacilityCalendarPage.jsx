@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import Alert from '../components/Alert'
 import CalendarGrid from '../components/CalendarGrid'
 import { getAvailability, getFacility } from '../lib/api'
 import { isoToday, parseTimeToMinutes } from '../lib/time'
@@ -25,6 +26,7 @@ export default function FacilityCalendarPage() {
   const [duration, setDuration] = useState(Number(sp.get('duration') || '60'))
   const [reservations, setReservations] = useState([])
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const end = useMemo(() => {
     const startMin = parseTimeToMinutes(selectedStart)
@@ -41,13 +43,15 @@ export default function FacilityCalendarPage() {
       .then((payload) => {
         if (ignore) return
         setFacility(payload)
+        setError(null)
       })
       .catch((err) => {
         if (ignore) return
-        const next = new URLSearchParams()
-        next.set('code', String(err?.status || 500))
-        if (err?.message) next.set('message', String(err.message))
-        navigate(`/error?${next.toString()}`, { replace: true })
+        setFacility(null)
+        setError({
+          code: err?.status || 500,
+          message: err?.message || 'Failed to load facility.',
+        })
       })
 
     return () => {
@@ -65,13 +69,15 @@ export default function FacilityCalendarPage() {
       .then((payload) => {
         if (ignore) return
         setReservations(payload.reservations || [])
+        setError(null)
       })
       .catch((err) => {
         if (ignore) return
-        const next = new URLSearchParams()
-        next.set('code', String(err?.status || 500))
-        if (err?.message) next.set('message', String(err.message))
-        navigate(`/error?${next.toString()}`, { replace: true })
+        setReservations([])
+        setError({
+          code: err?.status || 500,
+          message: err?.message || 'Failed to load availability.',
+        })
       })
       .finally(() => {
         if (ignore) return
@@ -154,7 +160,20 @@ export default function FacilityCalendarPage() {
             </aside>
 
             <section className="card cardPad">
-              {isLoading ? (
+              {error ? (
+                <div className="stack">
+                  <div className="h2">Unable to load</div>
+                  <Alert variant="danger" title={`Error ${error.code}`}>{error.message}</Alert>
+                  <div className="row" style={{ justifyContent: 'space-between' }}>
+                    <Link className="btn" to={searchContext ? `/search?${searchContext}` : '/search'}>
+                      Back to results
+                    </Link>
+                    <button className="btn btnPrimary" onClick={() => window.location.reload()}>
+                      Reload
+                    </button>
+                  </div>
+                </div>
+              ) : isLoading ? (
                 <div className="muted">Loading availability…</div>
               ) : (
                 <CalendarGrid

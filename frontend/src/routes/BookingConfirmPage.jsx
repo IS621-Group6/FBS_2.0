@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import Alert from '../components/Alert'
 import { createBooking, getFacility } from '../lib/api'
 
 export default function BookingConfirmPage() {
@@ -18,6 +19,7 @@ export default function BookingConfirmPage() {
   const [ack, setAck] = useState(false)
   const [reason, setReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState(null)
 
   const reasonTrimmed = useMemo(() => reason.trim(), [reason])
 
@@ -57,6 +59,7 @@ export default function BookingConfirmPage() {
     }
 
     setIsSubmitting(true)
+    setSubmitError(null)
 
     try {
       const booking = await createBooking({
@@ -69,10 +72,10 @@ export default function BookingConfirmPage() {
       })
       navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`)
     } catch (e) {
-      const next = new URLSearchParams()
-      next.set('code', String(e?.status || 500))
-      if (e?.message) next.set('message', String(e.message))
-      navigate(`/error?${next.toString()}`, { replace: true })
+      setSubmitError({
+        code: e?.status || 500,
+        message: e?.message || 'Booking failed. Please try a different slot.',
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -89,6 +92,9 @@ export default function BookingConfirmPage() {
 
           <div className="card cardPad">
             <div className="stack">
+              {submitError ? (
+                <Alert variant="danger" title={`Error ${submitError.code}`}>{submitError.message}</Alert>
+              ) : null}
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <div>
                   <div className="h2">Booking summary</div>

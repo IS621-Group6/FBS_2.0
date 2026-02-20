@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import Alert from '../components/Alert'
 import { getFacility } from '../lib/api'
 
 export default function FacilityDetailPage() {
   const { id } = useParams()
-  const navigate = useNavigate()
   const [sp] = useSearchParams()
   const searchContext = useMemo(() => {
     const next = new URLSearchParams(sp)
@@ -15,6 +15,7 @@ export default function FacilityDetailPage() {
 
   const [facility, setFacility] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     let ignore = false
@@ -26,13 +27,15 @@ export default function FacilityDetailPage() {
       .then((payload) => {
         if (ignore) return
         setFacility(payload)
+        setError(null)
       })
       .catch((err) => {
         if (ignore) return
-        const next = new URLSearchParams()
-        next.set('code', String(err?.status || 500))
-        if (err?.message) next.set('message', String(err.message))
-        navigate(`/error?${next.toString()}`, { replace: true })
+        setFacility(null)
+        setError({
+          code: err?.status || 500,
+          message: err?.message || 'Failed to load facility details.',
+        })
       })
       .finally(() => {
         if (ignore) return
@@ -42,7 +45,7 @@ export default function FacilityDetailPage() {
     return () => {
       ignore = true
     }
-  }, [id, navigate, searchContext])
+  }, [id, searchContext])
 
   const calendarUrl = `/facility/${encodeURIComponent(id)}/calendar${searchContext ? `?${searchContext}` : ''}`
 
@@ -51,6 +54,21 @@ export default function FacilityDetailPage() {
       <div className="container">
         {isLoading ? (
           <div className="card cardPad">Loading…</div>
+        ) : error ? (
+          <div className="card cardPad">
+            <div className="stack">
+              <h1 className="h1">Unable to load</h1>
+              <Alert variant="danger" title={`Error ${error.code}`}>{error.message}</Alert>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <Link className="btn" to={searchContext ? `/search?${searchContext}` : '/search'}>
+                  Back to results
+                </Link>
+                <Link className="btn btnPrimary" to="/search">
+                  Search
+                </Link>
+              </div>
+            </div>
+          </div>
         ) : facility ? (
           <div className="facilityDetailSplit">
             <div className="facilityHero" aria-label="Facility photo">
