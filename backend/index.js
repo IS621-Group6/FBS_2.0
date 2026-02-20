@@ -280,7 +280,12 @@ app.get("/api/facilities/:id/availability", (req, res) => {
       res.json({ facilityId: req.params.id, date, reservations: rows || [] });
       return;
     } catch (e) {
-      void e;
+      console.error(
+        "Error fetching DB availability for facility %s on %s:",
+        req.params.id,
+        date,
+        e
+      );
     }
   }
 
