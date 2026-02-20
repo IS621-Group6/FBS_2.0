@@ -42,12 +42,18 @@ export default function FacilityCalendarPage() {
         if (ignore) return
         setFacility(payload)
       })
-      .catch(() => {})
+      .catch((err) => {
+        if (ignore) return
+        const next = new URLSearchParams()
+        next.set('code', String(err?.status || 500))
+        if (err?.message) next.set('message', String(err.message))
+        navigate(`/error?${next.toString()}`, { replace: true })
+      })
 
     return () => {
       ignore = true
     }
-  }, [id])
+  }, [id, navigate])
 
   useEffect(() => {
     let ignore = false
@@ -60,9 +66,12 @@ export default function FacilityCalendarPage() {
         if (ignore) return
         setReservations(payload.reservations || [])
       })
-      .catch(() => {
+      .catch((err) => {
         if (ignore) return
-        setReservations([])
+        const next = new URLSearchParams()
+        next.set('code', String(err?.status || 500))
+        if (err?.message) next.set('message', String(err.message))
+        navigate(`/error?${next.toString()}`, { replace: true })
       })
       .finally(() => {
         if (ignore) return
@@ -72,7 +81,7 @@ export default function FacilityCalendarPage() {
     return () => {
       ignore = true
     }
-  }, [id, date])
+  }, [id, date, navigate])
 
   const proceed = () => {
     const confirmSp = new URLSearchParams()

@@ -5,6 +5,7 @@ import FacilityDetailPage from './routes/FacilityDetailPage'
 import FacilityCalendarPage from './routes/FacilityCalendarPage'
 import BookingConfirmPage from './routes/BookingConfirmPage'
 import BookingResultPage from './routes/BookingResultPage'
+import ErrorPage from './routes/ErrorPage'
 
 export default function App() {
   return (
@@ -17,7 +18,9 @@ export default function App() {
       <Route path="/booking/success" element={<BookingResultPage variant="success" />} />
       <Route path="/booking/failure" element={<BookingResultPage variant="failure" />} />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="/error" element={<ErrorPage />} />
+
+      <Route path="*" element={<Navigate to="/error?code=404" replace />} />
     </Routes>
   )
 }

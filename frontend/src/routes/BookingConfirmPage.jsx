@@ -69,9 +69,10 @@ export default function BookingConfirmPage() {
       })
       navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`)
     } catch (e) {
-      // Silent fallback during demo: send the user back to pick a new time.
-      void e
-      navigate(calendarUrl, { replace: true })
+      const next = new URLSearchParams()
+      next.set('code', String(e?.status || 500))
+      if (e?.message) next.set('message', String(e.message))
+      navigate(`/error?${next.toString()}`, { replace: true })
     } finally {
       setIsSubmitting(false)
     }

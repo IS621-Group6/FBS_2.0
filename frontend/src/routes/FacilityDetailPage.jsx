@@ -27,9 +27,12 @@ export default function FacilityDetailPage() {
         if (ignore) return
         setFacility(payload)
       })
-      .catch(() => {
+      .catch((err) => {
         if (ignore) return
-        navigate(searchContext ? `/search?${searchContext}` : '/search', { replace: true })
+        const next = new URLSearchParams()
+        next.set('code', String(err?.status || 500))
+        if (err?.message) next.set('message', String(err.message))
+        navigate(`/error?${next.toString()}`, { replace: true })
       })
       .finally(() => {
         if (ignore) return
