@@ -16,8 +16,6 @@ export default function LoginPage({ onLoginSuccess }) {
     await new Promise((resolve) => setTimeout(resolve, 500))
 
     if (email === 'test@test.com' && password === 'password') {
-      localStorage.setItem('fbs_is_logged_in', 'true')
-      localStorage.setItem('fbs_user_email', email)
       onLoginSuccess({ email })
     } else {
       setError('Invalid email or password.')
