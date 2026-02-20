@@ -387,17 +387,6 @@ app.get("/api/availability-glimpse", (req, res) => {
         });
       }
 
-      const businessStart = toMinutes(String(req.query.businessStart || "08:00"));
-      const businessEnd = toMinutes(String(req.query.businessEnd || "22:00"));
-      const step = 60;
-      const preferredStartMin = toMinutes(preferredStart) ?? businessStart;
-
-      function ceilToHour(mins) {
-        const rem = mins % 60;
-        if (rem === 0) return mins;
-        return mins + (60 - rem);
-      }
-
       for (const code of idByCode.keys()) {
         const dayBookings = bookingsByCode[code] || [];
         const foundSlots = [];
