@@ -417,7 +417,7 @@ app.get("/api/availability-glimpse", (req, res) => {
       res.json({ date, duration, items });
       return;
     } catch (e) {
-      void e;
+      console.error("Error while querying database for availability slots:", e);
     }
   }
 
