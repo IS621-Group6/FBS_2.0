@@ -21,8 +21,9 @@ export default function DashboardPage() {
     const [h, m] = start.split(':').map(Number)
     const startMin = h * 60 + m
     const endMin = startMin + Number(duration)
-    const hh = String(Math.floor(endMin / 60)).padStart(2, '0')
-    const mm = String(endMin % 60).padStart(2, '0')
+    const clampedEndMin = Math.min(endMin, 23 * 60 + 59)
+    const hh = String(Math.floor(clampedEndMin / 60)).padStart(2, '0')
+    const mm = String(clampedEndMin % 60).padStart(2, '0')
     return `${hh}:${mm}`
   }, [start, duration])
 
