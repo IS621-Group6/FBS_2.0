@@ -21,7 +21,7 @@ function AuthedApp() {
   const { user, login } = useAuth()
 
   if (!user) {
-    return <LoginPage onLoginSuccess={({ email }) => login(email)} />
+    return <LoginPage onLoginSuccess={(session) => login(session)} />
   }
 
   return (

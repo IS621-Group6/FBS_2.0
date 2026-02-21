@@ -20,10 +20,12 @@ VALUES
 ('COURT-B', 'Court B', 'Sports Hall', 1, 4, 3);
 
 -- Users
-INSERT INTO users (first_name, last_name, email)
+-- Demo accounts (password is bcrypt-hashed; plaintext is never stored).
+-- Password for both accounts: password
+INSERT INTO users (first_name, last_name, email, username, password_hash)
 VALUES
-('Alvin', 'C', 'alvin@example.com'),
-('Ben', 'Tan', 'ben@example.com');
+('Test', 'Student', 'test@test.com', 'test@test.com', '$2a$10$z54XaCiS3ncthe6QWHQtKuCSwIR/E2/osWS/1HGVtC/J.h2bCuxPy'),
+('Test', 'Staff', 'staff@smu.edu.sg', 'staff@smu.edu.sg', '$2a$10$z54XaCiS3ncthe6QWHQtKuCSwIR/E2/osWS/1HGVtC/J.h2bCuxPy');
 
 -- Booking headers
 INSERT INTO bookings (user_id)

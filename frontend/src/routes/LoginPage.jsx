@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { login as loginApi } from '../lib/api'
 import './LoginPage.css'
 
 export default function LoginPage({ onLoginSuccess }) {
@@ -13,12 +14,13 @@ export default function LoginPage({ onLoginSuccess }) {
     setError('')
     setIsLoading(true)
 
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    if (email === 'test@test.com' && password === 'password') {
-      onLoginSuccess({ email })
-    } else {
-      setError('Invalid email or password.')
+    try {
+      const session = await loginApi({ username: email, password })
+      onLoginSuccess(session)
+    } catch (e) {
+      void e
+      setError('Invalid username or password.')
+    } finally {
       setIsLoading(false)
     }
   }
@@ -38,14 +40,14 @@ export default function LoginPage({ onLoginSuccess }) {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-field">
-            <label htmlFor="email" className="form-label">Email</label>
+            <label htmlFor="email" className="form-label">Username</label>
             <input
               id="email"
-              type="email"
+              type="text"
               className="form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@smu.edu.sg"
+              placeholder="e.g., test@test.com"
               required
               disabled={isLoading}
               aria-invalid={error ? 'true' : 'false'}
@@ -101,7 +103,7 @@ export default function LoginPage({ onLoginSuccess }) {
 
         <div className="test-credentials">
           <p className="test-credentials-label">Test Credentials:</p>
-          <p className="test-credentials-text">Email: test@test.com</p>
+          <p className="test-credentials-text">Username: test@test.com</p>
           <p className="test-credentials-text">Password: password</p>
         </div>
       </div>

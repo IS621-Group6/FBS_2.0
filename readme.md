@@ -50,6 +50,7 @@ npm install
 **Terminal A: Backend**
 ```bash
 cd backend
+npm run init-db
 node index.js
 ```
 
@@ -77,3 +78,14 @@ Go to your browser and open:
 ```
 http://localhost:5173
 ```
+
+---
+
+## Demo Login
+
+This demo uses a local username/password database (SQLite) with bcrypt-hashed passwords.
+
+- Username: `test@test.com`
+- Password: `password`
+
+If you change the database schema or seed data, re-run `npm run init-db` in the `backend` folder.
