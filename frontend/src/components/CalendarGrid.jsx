@@ -101,6 +101,7 @@ export default function CalendarGrid({
                 if (isBlocked) return
                 setHoverStartMin(slotMin)
               }}
+              onBlur={() => setHoverStartMin(null)}
               aria-disabled={isBlocked}
               aria-label={isBlocked ? `${label} unavailable` : `${label} available`}
               title={isBlocked ? 'This start time overlaps an existing booking.' : 'Select this start time'}
