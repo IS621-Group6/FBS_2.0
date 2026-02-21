@@ -1,10 +1,106 @@
 const express = require("express");
 const cors = require("cors");
+const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 const { getDb, sqliteHealth } = require("./sqlite");
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(express.json());
+
+const AUTH = {
+  maxFailedAttempts: Math.max(1, Number(process.env.AUTH_MAX_FAILED || 5)),
+  lockoutMinutes: Math.max(1, Number(process.env.AUTH_LOCKOUT_MINUTES || 15)),
+  sessionIdleMinutes: Math.max(1, Number(process.env.SESSION_IDLE_MINUTES || 30)),
+};
+
+function nowIso() {
+  return new Date().toISOString();
+}
+
+function addMinutes(date, minutes) {
+  const d = date instanceof Date ? date : new Date(date);
+  return new Date(d.getTime() + minutes * 60 * 1000);
+}
+
+function sha256Hex(input) {
+  return crypto.createHash("sha256").update(String(input)).digest("hex");
+}
+
+function extractBearerToken(req) {
+  const header = String(req.headers.authorization || "").trim();
+  if (!header) return null;
+  const [scheme, token] = header.split(/\s+/, 2);
+  if (!scheme || scheme.toLowerCase() !== "bearer") return null;
+  if (!token) return null;
+  return token.trim();
+}
+
+function getAuthDbOr503(res) {
+  const db = getDb();
+  if (!db) {
+    res.status(503).json({ message: "Auth database unavailable. Run backend init-db." });
+    return null;
+  }
+  return db;
+}
+
+function requireAuth(req, res, next) {
+  const db = getAuthDbOr503(res);
+  if (!db) return;
+
+  const token = extractBearerToken(req);
+  if (!token) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  const tokenHash = sha256Hex(`fbs_session:${token}`);
+  const row = db
+    .prepare(
+      `SELECT s.session_token_hash,
+              s.user_id,
+              s.last_activity,
+              u.email,
+              u.username
+       FROM sessions s
+       JOIN users u ON u.user_id = s.user_id
+       WHERE s.session_token_hash = ?`
+    )
+    .get(tokenHash);
+
+  if (!row) {
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
+
+  const last = new Date(String(row.last_activity));
+  const idleMs = Date.now() - last.getTime();
+  const idleMinutes = idleMs / 60000;
+  if (!Number.isFinite(idleMinutes) || idleMinutes > AUTH.sessionIdleMinutes) {
+    db.prepare(`DELETE FROM sessions WHERE session_token_hash = ?`).run(tokenHash);
+    res.status(401).json({ message: "Session expired" });
+    return;
+  }
+
+  db.prepare(`UPDATE sessions SET last_activity = ? WHERE session_token_hash = ?`).run(
+    nowIso(),
+    tokenHash
+  );
+
+  req.user = {
+    userId: Number(row.user_id),
+    email: String(row.email),
+    username: String(row.username),
+  };
+  next();
+}
 
 function pad2(n) {
   return String(n).padStart(2, "0");
@@ -119,6 +215,100 @@ function nextBookingId() {
 app.get("/api/health", (req, res) => {
   const db = sqliteHealth();
   res.json({ ok: true, service: "smu-fbs", time: new Date().toISOString(), db });
+});
+
+app.post("/api/auth/login", (req, res) => {
+  const db = getAuthDbOr503(res);
+  if (!db) return;
+
+  const username = String(req.body?.username || "").trim();
+  const password = String(req.body?.password || "");
+
+  if (!username || !password) {
+    res.status(401).json({ message: "Invalid username or password" });
+    return;
+  }
+
+  const user = db
+    .prepare(
+      `SELECT user_id, email, username, password_hash, failed_attempts, lockout_until
+       FROM users
+       WHERE username = ? OR email = ?
+       LIMIT 1`
+    )
+    .get(username, username);
+
+  if (!user) {
+    res.status(401).json({ message: "Invalid username or password" });
+    return;
+  }
+
+  if (user.lockout_until) {
+    const until = new Date(String(user.lockout_until));
+    if (Date.now() < until.getTime()) {
+      console.warn("Auth lockout active for user:", user.username);
+      res.status(401).json({ message: "Invalid username or password" });
+      return;
+    }
+  }
+
+  const ok = bcrypt.compareSync(password, String(user.password_hash));
+  if (!ok) {
+    const nextAttempts = Number(user.failed_attempts || 0) + 1;
+    if (nextAttempts >= AUTH.maxFailedAttempts) {
+      const lockoutUntil = addMinutes(new Date(), AUTH.lockoutMinutes).toISOString();
+      db.prepare(
+        `UPDATE users
+         SET failed_attempts = ?, lockout_until = ?
+         WHERE user_id = ?`
+      ).run(nextAttempts, lockoutUntil, Number(user.user_id));
+      console.warn("Auth lockout set for user:", user.username);
+    } else {
+      db.prepare(`UPDATE users SET failed_attempts = ? WHERE user_id = ?`).run(
+        nextAttempts,
+        Number(user.user_id)
+      );
+    }
+
+    res.status(401).json({ message: "Invalid username or password" });
+    return;
+  }
+
+  // Successful login: clear lockout + failed attempts.
+  db.prepare(`UPDATE users SET failed_attempts = 0, lockout_until = NULL WHERE user_id = ?`).run(
+    Number(user.user_id)
+  );
+
+  const rawToken = crypto.randomBytes(32).toString("base64url");
+  const tokenHash = sha256Hex(`fbs_session:${rawToken}`);
+  const ts = nowIso();
+  db.prepare(
+    `INSERT INTO sessions (session_token_hash, user_id, created_at, last_activity)
+     VALUES (?, ?, ?, ?)`
+  ).run(tokenHash, Number(user.user_id), ts, ts);
+
+  res.json({
+    token: rawToken,
+    user: {
+      id: Number(user.user_id),
+      email: String(user.email),
+      username: String(user.username),
+    },
+  });
+});
+
+app.get("/api/auth/me", requireAuth, (req, res) => {
+  res.json({ user: req.user });
+});
+
+app.post("/api/auth/logout", requireAuth, (req, res) => {
+  const db = getDb();
+  const token = extractBearerToken(req);
+  if (db && token) {
+    const tokenHash = sha256Hex(`fbs_session:${token}`);
+    db.prepare(`DELETE FROM sessions WHERE session_token_hash = ?`).run(tokenHash);
+  }
+  res.json({ ok: true });
 });
 
 app.get("/api/facilities", async (req, res) => {
@@ -448,8 +638,8 @@ app.get("/api/availability-glimpse", (req, res) => {
   res.json({ date, duration, items });
 });
 
-app.post("/api/bookings", (req, res) => {
-  const { facilityId, date, start, end, userEmail, reason } = req.body || {};
+app.post("/api/bookings", requireAuth, (req, res) => {
+  const { facilityId, date, start, end, reason } = req.body || {};
 
   if (!facilityId || !date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
@@ -496,26 +686,16 @@ app.post("/api/bookings", (req, res) => {
         return;
       }
 
-      const email = String(userEmail || "guest@smu.edu.sg").trim();
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
 
       const tx = db.transaction(() => {
-        const user = db
-          .prepare(
-            `INSERT INTO users (first_name, last_name, email)
-             VALUES ('Guest', 'User', ?)
-             ON CONFLICT(email) DO UPDATE SET email = excluded.email
-             RETURNING user_id`
-          )
-          .get(email);
-
         const booking = db
           .prepare(
             `INSERT INTO bookings (user_id, booking_reason)
              VALUES (?, ?)
              RETURNING booking_id`
           )
-          .get(Number(user.user_id), reasonTrimmed);
+          .get(Number(req.user.userId), reasonTrimmed);
 
         db
           .prepare(
@@ -534,7 +714,7 @@ app.post("/api/bookings", (req, res) => {
         date,
         start,
         end,
-        userEmail: email,
+        userEmail: req.user.email,
         reason: reasonTrimmed || undefined,
       });
       return;
@@ -580,7 +760,7 @@ app.post("/api/bookings", (req, res) => {
     date,
     start,
     end,
-    userEmail: userEmail || "unknown@smu.edu.sg",
+    userEmail: req.user.email,
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
   };
 

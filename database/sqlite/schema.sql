@@ -7,13 +7,28 @@ DROP TABLE IF EXISTS booking_detail;
 DROP TABLE IF EXISTS bookings;
 DROP TABLE IF EXISTS facilities;
 DROP TABLE IF EXISTS facility_type;
+DROP TABLE IF EXISTS sessions;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
   user_id INTEGER PRIMARY KEY AUTOINCREMENT,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE
+  email TEXT NOT NULL UNIQUE,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  failed_attempts INTEGER NOT NULL DEFAULT 0,
+  lockout_until TEXT
+);
+
+-- Server-managed sessions (opaque token stored hashed).
+-- last_activity is used to implement idle timeout.
+CREATE TABLE sessions (
+  session_token_hash TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL,
+  last_activity TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE facility_type (

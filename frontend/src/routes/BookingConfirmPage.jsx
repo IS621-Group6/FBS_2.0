@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import { createBooking, getFacility } from '../lib/api'
+import useAuth from '../lib/useAuth'
 
 export default function BookingConfirmPage() {
   const [sp] = useSearchParams()
   const navigate = useNavigate()
-  const userEmail = 'guest@smu.edu.sg'
+  const { user } = useAuth()
+  const userEmail = user?.email || ''
 
   const facilityId = sp.get('facilityId') || ''
   const date = sp.get('date') || ''
@@ -64,7 +66,6 @@ export default function BookingConfirmPage() {
         date,
         start,
         end,
-        userEmail,
         reason: reasonTrimmed,
       })
       navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`)
@@ -142,7 +143,7 @@ export default function BookingConfirmPage() {
                 <Link className="btn" to={calendarUrl}>
                   Change time
                 </Link>
-                <button className="btn btnPrimary" onClick={submit} disabled={!ack || !reasonTrimmed || isSubmitting}>
+                <button className="btn btnPrimary" onClick={submit} disabled={!ack || !reasonTrimmed || isSubmitting || !userEmail}>
                   {isSubmitting ? 'Booking…' : 'Confirm booking'}
                 </button>
               </div>

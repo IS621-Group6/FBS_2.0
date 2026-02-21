@@ -3,8 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import FacilityCard from '../components/FacilityCard'
 import Pagination from '../components/Pagination'
-import CalendarGrid from '../components/CalendarGrid'
-import { getAvailability, getAvailabilityGlimpse, getFacility, searchFacilities } from '../lib/api'
+import { getAvailabilityGlimpse, searchFacilities } from '../lib/api'
 import { isoToday, parseTimeToMinutes } from '../lib/time'
 
 const CAMPUSES = ['Main Campus', 'Downtown Campus', 'Law Campus', 'Innovation District']
@@ -44,18 +43,14 @@ export default function SearchPage() {
   const [data, setData] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const [selectedFacilityId, setSelectedFacilityId] = useState(sp.get('facilityId') || '')
-  const [selectedFacility, setSelectedFacility] = useState(null)
-  const [availability, setAvailability] = useState([])
-  const [isLoadingAvailability, setIsLoadingAvailability] = useState(false)
-
   const [glimpsesById, setGlimpsesById] = useState({})
-
-  const [selectedStart, setSelectedStart] = useState(sp.get('slot') || start)
 
   const searchContext = useMemo(() => {
     const next = new URLSearchParams(sp)
     next.delete('page')
+    next.delete('facilityId')
+    next.delete('slot')
+    next.delete('end')
     return next.toString()
   }, [sp])
 
@@ -145,46 +140,6 @@ export default function SearchPage() {
     }
   }, [resultIdsKey, resultIds, date, start])
 
-  useEffect(() => {
-    let ignore = false
-    const facilityId = selectedFacilityId
-    if (!facilityId) {
-      Promise.resolve().then(() => {
-        if (ignore) return
-        setSelectedFacility(null)
-        setAvailability([])
-      })
-      return () => {
-        ignore = true
-      }
-    }
-
-    Promise.resolve().then(() => {
-      if (ignore) return
-      setIsLoadingAvailability(true)
-    })
-
-    Promise.all([getFacility(facilityId), getAvailability(facilityId, date)])
-      .then(([facility, avail]) => {
-        if (ignore) return
-        setSelectedFacility(facility)
-        setAvailability(avail.reservations || [])
-      })
-      .catch(() => {
-        if (ignore) return
-        setSelectedFacility(null)
-        setAvailability([])
-      })
-      .finally(() => {
-        if (ignore) return
-        setIsLoadingAvailability(false)
-      })
-
-    return () => {
-      ignore = true
-    }
-  }, [selectedFacilityId, date])
-
   const updateParam = (key, value) => {
     const next = new URLSearchParams(sp)
     if (!value) next.delete(key)
@@ -231,32 +186,16 @@ export default function SearchPage() {
     navigate(`/?${next.toString()}`)
   }
 
-  const selectRoom = (facilityId) => {
-    setSelectedFacilityId(facilityId)
+  const goToCalendar = (facilityId) => {
     const next = new URLSearchParams(sp)
-    next.set('facilityId', facilityId)
-    // keep the chosen slot in URL (helps usability testing + refresh)
-    if (selectedStart) next.set('slot', selectedStart)
-    setSp(next)
-  }
-
-  const proceedToConfirm = () => {
-    if (!selectedFacilityId) return
-    const confirmSp = new URLSearchParams()
-    confirmSp.set('facilityId', selectedFacilityId)
-    confirmSp.set('date', date)
-    confirmSp.set('start', selectedStart)
-    // compute end using duration
-    const startMin = parseTimeToMinutes(selectedStart)
-    const endMin = startMin !== null ? startMin + Number(duration) : null
-    const hh = endMin !== null ? String(Math.floor(endMin / 60)).padStart(2, '0') : ''
-    const mm = endMin !== null ? String(endMin % 60).padStart(2, '0') : ''
-    if (hh && mm) confirmSp.set('end', `${hh}:${mm}`)
-    // carry current filters for return navigation
-    const returnSp = new URLSearchParams(sp)
-    returnSp.delete('page')
-    confirmSp.set('return', returnSp.toString())
-    navigate(`/booking/confirm?${confirmSp.toString()}`)
+    next.delete('page')
+    next.delete('facilityId')
+    next.delete('slot')
+    next.delete('end')
+    if (date) next.set('date', date)
+    if (start) next.set('start', start)
+    if (duration) next.set('duration', String(duration))
+    navigate(`/facility/${encodeURIComponent(facilityId)}/calendar?${next.toString()}`)
   }
 
   return (
@@ -362,54 +301,10 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {selectedFacilityId ? (
-            <div className="card cardPad">
-              <div className="stack">
-                <div className="row" style={{ justifyContent: 'space-between' }}>
-                  <div>
-                    <div className="h2">Availability</div>
-                    <div className="muted">
-                      {selectedFacility ? (
-                        <>
-                          {selectedFacility.name} • {selectedFacility.campus}
-                        </>
-                      ) : (
-                        `Facility ${selectedFacilityId}`
-                      )}
-                    </div>
-                  </div>
-                  <div className="row">
-                    <Link className="btn" to={`/facility/${encodeURIComponent(selectedFacilityId)}`}>Details</Link>
-                    <button className="btn btnPrimary" onClick={proceedToConfirm} disabled={isLoadingAvailability}>
-                      Continue to confirmation
-                    </button>
-                  </div>
-                </div>
-
-                {isLoadingAvailability ? (
-                  <div className="muted">Loading availability…</div>
-                ) : (
-                  <CalendarGrid
-                    date={date}
-                    reservations={availability}
-                    selectedStart={selectedStart}
-                    selectedDuration={duration}
-                    onSelectStart={(nextStart) => {
-                      setSelectedStart(nextStart)
-                      const next = new URLSearchParams(sp)
-                      next.set('slot', nextStart)
-                      setSp(next)
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="alert">
-              <div className="alertTitle">Next step</div>
-              <div className="muted">Select a room below to see availability and book it.</div>
-            </div>
-          )}
+          <div className="alert">
+            <div className="alertTitle">Next step</div>
+            <div className="muted">Select a room below to open its calendar and book it.</div>
+          </div>
 
           {isLoading ? (
             <div className="card cardPad">Loading…</div>
@@ -428,8 +323,7 @@ export default function SearchPage() {
                     key={f.id}
                     facility={f}
                     searchContext={searchContext}
-                    onSelect={() => selectRoom(f.id)}
-                    isSelected={f.id === selectedFacilityId}
+                    onSelect={() => goToCalendar(f.id)}
                     availabilityGlimpse={glimpsesById[f.id]}
                   />
                 ))}

@@ -1,7 +1,15 @@
+import { AUTH_STORAGE, clearStoredUser } from './auth'
+
 async function request(path, { method = 'GET', body } = {}) {
+  const token = (localStorage.getItem(AUTH_STORAGE.tokenKey) || '').trim()
+
+  const headers = {}
+  if (body) headers['Content-Type'] = 'application/json'
+  if (token) headers.Authorization = `Bearer ${token}`
+
   const res = await fetch(path, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    headers: Object.keys(headers).length ? headers : undefined,
     body: body ? JSON.stringify(body) : undefined,
   })
 
@@ -10,6 +18,10 @@ async function request(path, { method = 'GET', body } = {}) {
   const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null)
 
   if (!res.ok) {
+    if (res.status === 401) {
+      clearStoredUser()
+      window.dispatchEvent(new Event('fbs:logout'))
+    }
     const message = payload?.message || payload?.error || `Request failed (${res.status})`
     const err = new Error(message)
     err.status = res.status
@@ -22,6 +34,18 @@ async function request(path, { method = 'GET', body } = {}) {
 
 export function getHealth() {
   return request('/api/health')
+}
+
+export function login({ username, password }) {
+  return request('/api/auth/login', { method: 'POST', body: { username, password } })
+}
+
+export function logout() {
+  return request('/api/auth/logout', { method: 'POST' })
+}
+
+export function getMe() {
+  return request('/api/auth/me')
 }
 
 export function searchFacilities(params) {
