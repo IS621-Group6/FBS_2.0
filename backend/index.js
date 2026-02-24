@@ -14,7 +14,12 @@ const ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS || "")
 
 // Fallback to common local development origins if none were configured
 if (ALLOWED_ORIGINS.length === 0) {
-  ALLOWED_ORIGINS.push("http://localhost:3000", "http://127.0.0.1:3000");
+  ALLOWED_ORIGINS.push(
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173"
+  );
 }
 
 app.use(
