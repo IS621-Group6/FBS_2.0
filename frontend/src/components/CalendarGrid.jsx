@@ -69,6 +69,11 @@ export default function CalendarGrid({
         role="grid"
         aria-label="Time slots"
         onMouseLeave={() => setHoverStartMin(null)}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setHoverStartMin(null)
+          }
+        }}
       >
         {slots.map((slotMin) => {
           const label = formatTimeLabel(slotMin)
