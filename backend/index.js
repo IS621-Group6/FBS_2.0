@@ -5,9 +5,30 @@ const bcrypt = require("bcryptjs");
 const { getDb, sqliteHealth } = require("./sqlite");
 
 const app = express();
+
+// Configure allowed CORS origins: from env (CORS_ALLOWED_ORIGINS) or sensible defaults for local dev
+const ALLOWED_ORIGINS = (process.env.CORS_ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+// Fallback to common local development origins if none were configured
+if (ALLOWED_ORIGINS.length === 0) {
+  ALLOWED_ORIGINS.push("http://localhost:3000", "http://127.0.0.1:3000");
+}
+
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow non-browser or same-origin requests with no Origin header
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (ALLOWED_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
