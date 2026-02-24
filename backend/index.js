@@ -46,6 +46,9 @@ const AUTH = {
   sessionIdleMinutes: Math.max(1, Number(process.env.SESSION_IDLE_MINUTES || 30)),
 };
 
+// Pre-computed dummy hash for timing-safe login: ensures bcrypt always runs even for unknown users.
+const DUMMY_HASH = bcrypt.hashSync("dummy-password-for-timing-safety", 10);
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -76,6 +79,9 @@ function getAuthDbOr503(res) {
   }
   return db;
 }
+
+// Throttle for opportunistic expired-session cleanup: run at most once per minute.
+let lastSessionCleanupAt = 0;
 
 function requireAuth(req, res, next) {
   const db = getAuthDbOr503(res);
@@ -111,6 +117,13 @@ function requireAuth(req, res, next) {
   const idleMinutes = idleMs / 60000;
   if (!Number.isFinite(idleMinutes) || idleMinutes > AUTH.sessionIdleMinutes) {
     db.prepare(`DELETE FROM sessions WHERE session_token_hash = ?`).run(tokenHash);
+    // Opportunistically purge other expired sessions at most once per minute.
+    const now = Date.now();
+    if (now - lastSessionCleanupAt > 60_000) {
+      lastSessionCleanupAt = now;
+      const expiryCutoff = addMinutes(new Date(), -AUTH.sessionIdleMinutes).toISOString();
+      db.prepare(`DELETE FROM sessions WHERE last_activity < ?`).run(expiryCutoff);
+    }
     res.status(401).json({ message: "Session expired" });
     return;
   }
@@ -264,62 +277,83 @@ app.post("/api/auth/login", (req, res) => {
     )
     .get(username, username);
 
-  if (!user) {
-    res.status(401).json({ message: "Invalid username or password" });
-    return;
-  }
+  // Always hash-compare to prevent username enumeration via timing differences.
+  const hashToCompare = user ? String(user.password_hash) : DUMMY_HASH;
 
-  if (user.lockout_until) {
+  if (user?.lockout_until) {
     const until = new Date(String(user.lockout_until));
     if (Date.now() < until.getTime()) {
-      console.warn("Auth lockout active for user:", user.username);
+      // Normalize timing even during lockout to avoid leaking user existence.
+      bcrypt.compare(password, hashToCompare, () => {
+        console.warn("Auth lockout active for user:", user.username);
+        res.status(401).json({ message: "Invalid username or password" });
+      });
+      return;
+    } else {
+      // Lockout period has expired: clear lockout state before processing login.
+      db.prepare(
+        `UPDATE users
+         SET failed_attempts = 0, lockout_until = NULL
+         WHERE user_id = ?`
+      ).run(Number(user.user_id));
+      user.failed_attempts = 0;
+      user.lockout_until = null;
+    }
+  }
+
+  bcrypt.compare(password, hashToCompare, (err, ok) => {
+    if (err) {
+      console.error("Error during password comparison:", err);
+      res.status(500).json({ message: "Internal server error" });
+      return;
+    }
+
+    if (!user || !ok) {
+      if (user) {
+        const nextAttempts = Number(user.failed_attempts || 0) + 1;
+        if (nextAttempts >= AUTH.maxFailedAttempts) {
+          const lockoutUntil = addMinutes(new Date(), AUTH.lockoutMinutes).toISOString();
+          db.prepare(
+            `UPDATE users
+             SET failed_attempts = ?, lockout_until = ?
+             WHERE user_id = ?`
+          ).run(nextAttempts, lockoutUntil, Number(user.user_id));
+          console.warn("Auth lockout set for user:", user.username);
+        } else {
+          db.prepare(`UPDATE users SET failed_attempts = ? WHERE user_id = ?`).run(
+            nextAttempts,
+            Number(user.user_id)
+          );
+        }
+      }
       res.status(401).json({ message: "Invalid username or password" });
       return;
     }
-  }
 
-  const ok = bcrypt.compareSync(password, String(user.password_hash));
-  if (!ok) {
-    const nextAttempts = Number(user.failed_attempts || 0) + 1;
-    if (nextAttempts >= AUTH.maxFailedAttempts) {
-      const lockoutUntil = addMinutes(new Date(), AUTH.lockoutMinutes).toISOString();
-      db.prepare(
-        `UPDATE users
-         SET failed_attempts = ?, lockout_until = ?
-         WHERE user_id = ?`
-      ).run(nextAttempts, lockoutUntil, Number(user.user_id));
-      console.warn("Auth lockout set for user:", user.username);
-    } else {
-      db.prepare(`UPDATE users SET failed_attempts = ? WHERE user_id = ?`).run(
-        nextAttempts,
-        Number(user.user_id)
-      );
-    }
+    // Successful login: clear lockout + failed attempts.
+    db.prepare(
+      `UPDATE users SET failed_attempts = 0, lockout_until = NULL WHERE user_id = ?`
+    ).run(Number(user.user_id));
 
-    res.status(401).json({ message: "Invalid username or password" });
-    return;
-  }
+    // Invalidate all existing sessions for this user (single active session policy).
+    db.prepare(`DELETE FROM sessions WHERE user_id = ?`).run(Number(user.user_id));
 
-  // Successful login: clear lockout + failed attempts.
-  db.prepare(`UPDATE users SET failed_attempts = 0, lockout_until = NULL WHERE user_id = ?`).run(
-    Number(user.user_id)
-  );
+    const rawToken = crypto.randomBytes(32).toString("base64url");
+    const tokenHash = sha256Hex(`fbs_session:${rawToken}`);
+    const ts = nowIso();
+    db.prepare(
+      `INSERT INTO sessions (session_token_hash, user_id, created_at, last_activity)
+       VALUES (?, ?, ?, ?)`
+    ).run(tokenHash, Number(user.user_id), ts, ts);
 
-  const rawToken = crypto.randomBytes(32).toString("base64url");
-  const tokenHash = sha256Hex(`fbs_session:${rawToken}`);
-  const ts = nowIso();
-  db.prepare(
-    `INSERT INTO sessions (session_token_hash, user_id, created_at, last_activity)
-     VALUES (?, ?, ?, ?)`
-  ).run(tokenHash, Number(user.user_id), ts, ts);
-
-  res.json({
-    token: rawToken,
-    user: {
-      id: Number(user.user_id),
-      email: String(user.email),
-      username: String(user.username),
-    },
+    res.json({
+      token: rawToken,
+      user: {
+        id: Number(user.user_id),
+        email: String(user.email),
+        username: String(user.username),
+      },
+    });
   });
 });
 

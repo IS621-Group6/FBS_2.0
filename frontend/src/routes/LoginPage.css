@@ -17,13 +17,7 @@
   --color-gray-text: var(--muted-2);
   --color-error: var(--danger);
   --color-error-bg: color-mix(in srgb, var(--danger) 10%, transparent);
-}
 
-* {
-  box-sizing: border-box;
-}
-
-.login-page {
   display: flex;
   align-items: center;
   justify-content: center;
