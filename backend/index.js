@@ -278,48 +278,55 @@ app.post("/api/auth/login", (req, res) => {
     }
   }
 
-  const ok = bcrypt.compareSync(password, String(user.password_hash));
-  if (!ok) {
-    const nextAttempts = Number(user.failed_attempts || 0) + 1;
-    if (nextAttempts >= AUTH.maxFailedAttempts) {
-      const lockoutUntil = addMinutes(new Date(), AUTH.lockoutMinutes).toISOString();
-      db.prepare(
-        `UPDATE users
-         SET failed_attempts = ?, lockout_until = ?
-         WHERE user_id = ?`
-      ).run(nextAttempts, lockoutUntil, Number(user.user_id));
-      console.warn("Auth lockout set for user:", user.username);
-    } else {
-      db.prepare(`UPDATE users SET failed_attempts = ? WHERE user_id = ?`).run(
-        nextAttempts,
-        Number(user.user_id)
-      );
+  bcrypt.compare(password, String(user.password_hash), (err, ok) => {
+    if (err) {
+      console.error("Error during password comparison:", err);
+      res.status(500).json({ message: "Internal server error" });
+      return;
     }
 
-    res.status(401).json({ message: "Invalid username or password" });
-    return;
-  }
+    if (!ok) {
+      const nextAttempts = Number(user.failed_attempts || 0) + 1;
+      if (nextAttempts >= AUTH.maxFailedAttempts) {
+        const lockoutUntil = addMinutes(new Date(), AUTH.lockoutMinutes).toISOString();
+        db.prepare(
+          `UPDATE users
+           SET failed_attempts = ?, lockout_until = ?
+           WHERE user_id = ?`
+        ).run(nextAttempts, lockoutUntil, Number(user.user_id));
+        console.warn("Auth lockout set for user:", user.username);
+      } else {
+        db.prepare(`UPDATE users SET failed_attempts = ? WHERE user_id = ?`).run(
+          nextAttempts,
+          Number(user.user_id)
+        );
+      }
 
-  // Successful login: clear lockout + failed attempts.
-  db.prepare(`UPDATE users SET failed_attempts = 0, lockout_until = NULL WHERE user_id = ?`).run(
-    Number(user.user_id)
-  );
+      res.status(401).json({ message: "Invalid username or password" });
+      return;
+    }
 
-  const rawToken = crypto.randomBytes(32).toString("base64url");
-  const tokenHash = sha256Hex(`fbs_session:${rawToken}`);
-  const ts = nowIso();
-  db.prepare(
-    `INSERT INTO sessions (session_token_hash, user_id, created_at, last_activity)
-     VALUES (?, ?, ?, ?)`
-  ).run(tokenHash, Number(user.user_id), ts, ts);
+    // Successful login: clear lockout + failed attempts.
+    db.prepare(
+      `UPDATE users SET failed_attempts = 0, lockout_until = NULL WHERE user_id = ?`
+    ).run(Number(user.user_id));
 
-  res.json({
-    token: rawToken,
-    user: {
-      id: Number(user.user_id),
-      email: String(user.email),
-      username: String(user.username),
-    },
+    const rawToken = crypto.randomBytes(32).toString("base64url");
+    const tokenHash = sha256Hex(`fbs_session:${rawToken}`);
+    const ts = nowIso();
+    db.prepare(
+      `INSERT INTO sessions (session_token_hash, user_id, created_at, last_activity)
+       VALUES (?, ?, ?, ?)`
+    ).run(tokenHash, Number(user.user_id), ts, ts);
+
+    res.json({
+      token: rawToken,
+      user: {
+        id: Number(user.user_id),
+        email: String(user.email),
+        username: String(user.username),
+      },
+    });
   });
 });
 
