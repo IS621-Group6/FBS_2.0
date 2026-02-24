@@ -50,7 +50,6 @@ export default function SearchPage() {
     next.delete('page')
     next.delete('facilityId')
     next.delete('slot')
-    next.delete('end')
     return next.toString()
   }, [sp])
 
