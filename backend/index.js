@@ -490,7 +490,8 @@ app.post("/api/bookings", (req, res) => {
 
       if (conflict) {
         res.status(409).json({
-          message: "Double booking prevented",
+          error: "DOUBLE_BOOKING",
+          message: "This timeslot is already booked.",
           conflict: { id: conflict.id, start: conflict.start, end: conflict.end },
         });
         return;
@@ -568,7 +569,8 @@ app.post("/api/bookings", (req, res) => {
 
   if (conflict) {
     res.status(409).json({
-      message: "Double booking prevented",
+      error: "DOUBLE_BOOKING",
+      message: "This timeslot is already booked.",
       conflict: { id: conflict.id, start: conflict.start, end: conflict.end },
     });
     return;
