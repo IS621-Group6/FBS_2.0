@@ -18,7 +18,7 @@
   --color-error-bg: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
-* {
+.login-page * {
   box-sizing: border-box;
 }
 
