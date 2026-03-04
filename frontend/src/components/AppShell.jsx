@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
+import useAuth from '../lib/useAuth'
 
 function useQuery() {
   const { search } = useLocation()
@@ -8,6 +9,7 @@ function useQuery() {
 
 export default function AppShell({ children, showSearch = true }) {
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const q = useQuery().get('q') || ''
   const [query, setQuery] = useState(q)
 
@@ -32,8 +34,8 @@ export default function AppShell({ children, showSearch = true }) {
                 width: 36,
                 height: 36,
                 borderRadius: 10,
-                background: 'rgba(var(--primary-rgb), 0.12)',
-                border: '1px solid rgba(var(--primary-rgb), 0.18)',
+                background: 'color-mix(in srgb, var(--primary-contrast) 14%, transparent)',
+                border: '1px solid color-mix(in srgb, var(--primary-contrast) 22%, transparent)',
               }}
             />
             <div className="brand">
@@ -60,9 +62,10 @@ export default function AppShell({ children, showSearch = true }) {
           </div>
 
           <div className="navRight">
-            <span className="pill" title="Authentication disabled">
-              Guest mode
-            </span>
+            <span className="pill">{user?.email || 'Signed out'}</span>
+            <button className="btn" type="button" onClick={logout}>
+              Logout
+            </button>
           </div>
         </div>
       </header>

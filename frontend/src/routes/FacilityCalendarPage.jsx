@@ -147,8 +147,8 @@ export default function FacilityCalendarPage() {
                 </div>
 
                 {hasOverlap && (
-                  <div className="alert" style={{ background: 'rgba(220, 38, 38, 0.08)', borderColor: 'rgba(220, 38, 38, 0.3)' }}>
-                    <div style={{ color: '#991b1b', fontSize: 14 }}>
+                  <div className="alert alertDanger">
+                    <div style={{ color: 'var(--danger)', fontSize: 14 }}>
                       ⚠️ This timeslot overlaps with an existing booking. Please choose a different time or duration.
                     </div>
                   </div>

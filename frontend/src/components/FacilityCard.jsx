@@ -4,7 +4,6 @@ export default function FacilityCard({
   facility,
   searchContext,
   onSelect,
-  isSelected = false,
   availabilityGlimpse,
 }) {
   const equipment = facility.equipment || []
@@ -65,8 +64,8 @@ export default function FacilityCard({
               Details
             </Link>
             {onSelect ? (
-              <button className="btn btnPrimary" onClick={onSelect} aria-pressed={isSelected}>
-                {isSelected ? 'Selected' : 'Select & book'}
+              <button className="btn btnPrimary" onClick={onSelect}>
+                Select & book
               </button>
             ) : (
               <Link className="btn btnPrimary" to={calendarUrl}>
