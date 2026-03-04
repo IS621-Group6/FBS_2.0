@@ -69,9 +69,14 @@ export default function BookingConfirmPage() {
       })
       navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`)
     } catch (e) {
-      // Silent fallback during demo: send the user back to pick a new time.
-      void e
-      navigate(calendarUrl, { replace: true })
+      if (e.status === 409 && e.data?.error === 'DOUBLE_BOOKING') {
+        // Show prominent alert for concurrent booking conflict
+        alert('⚠️ Booking Conflict\n\nThis timeslot was just booked by another user.\n\nPlease select a different time slot.')
+        navigate(calendarUrl, { replace: true })
+      } else {
+        // Send user back to pick a new time for other errors
+        navigate(calendarUrl, { replace: true })
+      }
     } finally {
       setIsSubmitting(false)
     }

@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import CalendarGrid from '../components/CalendarGrid'
 import { getAvailability, getFacility } from '../lib/api'
-import { isoToday, parseTimeToMinutes } from '../lib/time'
+import { isoToday, overlaps, parseTimeToMinutes } from '../lib/time'
 
 export default function FacilityCalendarPage() {
   const { id } = useParams()
@@ -34,6 +34,18 @@ export default function FacilityCalendarPage() {
     const mm = String(endMin % 60).padStart(2, '0')
     return `${hh}:${mm}`
   }, [selectedStart, duration])
+
+  const hasOverlap = useMemo(() => {
+    const startMin = parseTimeToMinutes(selectedStart)
+    const endMin = parseTimeToMinutes(end)
+    if (startMin === null || endMin === null) return false
+
+    return reservations.some((r) => {
+      const rStart = parseTimeToMinutes(r.start)
+      const rEnd = parseTimeToMinutes(r.end)
+      return overlaps(startMin, endMin, rStart, rEnd)
+    })
+  }, [selectedStart, end, reservations])
 
   useEffect(() => {
     let ignore = false
@@ -134,7 +146,15 @@ export default function FacilityCalendarPage() {
                   </div>
                 </div>
 
-                <button className="btn btnPrimary" onClick={proceed} disabled={!selectedStart || !end || isLoading}>
+                {hasOverlap && (
+                  <div className="alert" style={{ background: 'rgba(220, 38, 38, 0.08)', borderColor: 'rgba(220, 38, 38, 0.3)' }}>
+                    <div style={{ color: '#991b1b', fontSize: 14 }}>
+                      ⚠️ This timeslot overlaps with an existing booking. Please choose a different time or duration.
+                    </div>
+                  </div>
+                )}
+
+                <button className="btn btnPrimary" onClick={proceed} disabled={!selectedStart || !end || isLoading || hasOverlap}>
                   Continue to confirmation
                 </button>
 

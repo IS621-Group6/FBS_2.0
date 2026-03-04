@@ -13,7 +13,7 @@ async function request(path, { method = 'GET', body } = {}) {
     const message = payload?.message || payload?.error || `Request failed (${res.status})`
     const err = new Error(message)
     err.status = res.status
-    err.payload = payload
+    err.data = payload
     throw err
   }
 
