@@ -38,9 +38,61 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  background: var(--primary);
+  border-bottom: 1px solid color-mix(in srgb, var(--primary-contrast) 18%, transparent);
+}
+
+.topNav a {
+  color: var(--primary-contrast);
+}
+
+.topNav a:hover {
+  text-decoration: none;
+}
+
+.topNav .brandTitle {
+  color: var(--primary-contrast);
+}
+
+.topNav .brandSub {
+  color: color-mix(in srgb, var(--primary-contrast) 78%, transparent);
+}
+
+.topNav .pill {
+  background: color-mix(in srgb, var(--primary-contrast) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary-contrast) 18%, transparent);
+  color: var(--primary-contrast);
+}
+
+.topNav .btn {
+  background: color-mix(in srgb, var(--primary-contrast) 8%, transparent);
+  border-color: color-mix(in srgb, var(--primary-contrast) 20%, transparent);
+  color: var(--primary-contrast);
+}
+
+.topNav .btn:hover {
+  border-color: color-mix(in srgb, var(--primary-contrast) 32%, transparent);
+}
+
+.topNav .btnPrimary {
+  background: color-mix(in srgb, var(--primary-contrast) 16%, transparent);
+  border-color: color-mix(in srgb, var(--primary-contrast) 24%, transparent);
+  color: var(--primary-contrast);
+}
+
+.topNav .btnPrimary:hover {
+  background: color-mix(in srgb, var(--primary-contrast) 22%, transparent);
+  border-color: color-mix(in srgb, var(--primary-contrast) 30%, transparent);
+}
+
+.topNav .input {
+  background: color-mix(in srgb, var(--primary-contrast) 10%, transparent);
+  border-color: color-mix(in srgb, var(--primary-contrast) 22%, transparent);
+  color: var(--primary-contrast);
+}
+
+.topNav .input::placeholder {
+  color: color-mix(in srgb, var(--primary-contrast) 75%, transparent);
 }
 
 .topNavInner {
