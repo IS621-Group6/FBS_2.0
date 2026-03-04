@@ -15,10 +15,13 @@ export default function LoginPage({ onLoginSuccess }) {
 
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    if (email === 'test@test.com' && password === 'password') {
-      onLoginSuccess({ email })
-    } else {
-      setError('Invalid email or password.')
+    try {
+      if (email === 'test@test.com' && password === 'password') {
+        onLoginSuccess({ email })
+      } else {
+        setError('Invalid email or password.')
+      }
+    } finally {
       setIsLoading(false)
     }
   }

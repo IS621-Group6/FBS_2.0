@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import FacilityCard from '../components/FacilityCard'
 import Pagination from '../components/Pagination'
@@ -296,7 +296,7 @@ export default function SearchPage() {
               </div>
 
               <div className="muted2" style={{ fontSize: 12 }}>
-                Filters update results; select a room to book from the same page.
+                Filters update results; select a room to open its calendar and complete your booking.
               </div>
             </div>
           </div>
