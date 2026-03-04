@@ -88,42 +88,71 @@ function requireAuth(req, res, next) {
   }
 
   const tokenHash = sha256Hex(`fbs_session:${token}`);
-  const row = db
-    .prepare(
-      `SELECT s.session_token_hash,
-              s.user_id,
-              s.last_activity,
-              u.email,
-              u.username
-       FROM sessions s
-       JOIN users u ON u.user_id = s.user_id
-       WHERE s.session_token_hash = ?`
-    )
-    .get(tokenHash);
 
-  if (!row) {
+  const selectSessionStmt = db.prepare(
+    `SELECT s.session_token_hash,
+            s.user_id,
+            s.last_activity,
+            u.email,
+            u.username
+     FROM sessions s
+     JOIN users u ON u.user_id = s.user_id
+     WHERE s.session_token_hash = ?`
+  );
+  const deleteSessionStmt = db.prepare(
+    `DELETE FROM sessions WHERE session_token_hash = ?`
+  );
+  const updateSessionStmt = db.prepare(
+    `UPDATE sessions SET last_activity = ? WHERE session_token_hash = ?`
+  );
+
+  let sessionRow = null;
+  let sessionStatus = null; // "unauthorized" | "expired" | "ok"
+
+  const tx = db.transaction((hash) => {
+    const row = selectSessionStmt.get(hash);
+    if (!row) {
+      sessionStatus = "unauthorized";
+      return;
+    }
+
+    const last = new Date(String(row.last_activity));
+    const idleMs = Date.now() - last.getTime();
+    const idleMinutes = idleMs / 60000;
+
+    if (!Number.isFinite(idleMinutes) || idleMinutes > AUTH.sessionIdleMinutes) {
+      deleteSessionStmt.run(hash);
+      sessionStatus = "expired";
+      return;
+    }
+
+    updateSessionStmt.run(nowIso(), hash);
+    sessionRow = row;
+    sessionStatus = "ok";
+  });
+
+  tx(tokenHash);
+
+  if (sessionStatus === "unauthorized") {
     res.status(401).json({ message: "Unauthorized" });
     return;
   }
 
-  const last = new Date(String(row.last_activity));
-  const idleMs = Date.now() - last.getTime();
-  const idleMinutes = idleMs / 60000;
-  if (!Number.isFinite(idleMinutes) || idleMinutes > AUTH.sessionIdleMinutes) {
-    db.prepare(`DELETE FROM sessions WHERE session_token_hash = ?`).run(tokenHash);
+  if (sessionStatus === "expired") {
     res.status(401).json({ message: "Session expired" });
     return;
   }
 
-  db.prepare(`UPDATE sessions SET last_activity = ? WHERE session_token_hash = ?`).run(
-    nowIso(),
-    tokenHash
-  );
+  if (sessionStatus !== "ok" || !sessionRow) {
+    // Fallback: treat any unexpected state as unauthorized
+    res.status(401).json({ message: "Unauthorized" });
+    return;
+  }
 
   req.user = {
-    userId: Number(row.user_id),
-    email: String(row.email),
-    username: String(row.username),
+    userId: Number(sessionRow.user_id),
+    email: String(sessionRow.email),
+    username: String(sessionRow.username),
   };
   next();
 }
