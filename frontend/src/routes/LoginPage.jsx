@@ -17,8 +17,7 @@ export default function LoginPage({ onLoginSuccess }) {
     try {
       const session = await loginApi({ username: email, password })
       onLoginSuccess(session)
-    } catch (e) {
-      void e
+    } catch (_e) {
       setError('Invalid username or password.')
     } finally {
       setIsLoading(false)
