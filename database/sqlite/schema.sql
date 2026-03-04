@@ -31,6 +31,30 @@ CREATE TABLE sessions (
   FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- Index to support efficient cleanup of expired sessions by last_activity.
+CREATE INDEX IF NOT EXISTS idx_sessions_last_activity
+  ON sessions (last_activity);
+
+-- Trigger-based cleanup of expired sessions.
+-- Sessions with last_activity older than the idle timeout will be deleted
+-- whenever a new session is created or an existing session's last_activity
+-- is updated.
+--
+-- NOTE: The idle timeout is currently set to 30 minutes. Adjust the
+-- '-30 minutes' interval below if the application uses a different value.
+CREATE TRIGGER IF NOT EXISTS trg_sessions_cleanup_after_insert
+AFTER INSERT ON sessions
+BEGIN
+  DELETE FROM sessions
+  WHERE last_activity < datetime('now', '-30 minutes');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_sessions_cleanup_after_update
+AFTER UPDATE OF last_activity ON sessions
+BEGIN
+  DELETE FROM sessions
+  WHERE last_activity < datetime('now', '-30 minutes');
+END;
 CREATE TABLE facility_type (
   facility_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
   type_name TEXT NOT NULL UNIQUE
