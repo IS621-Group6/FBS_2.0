@@ -583,6 +583,7 @@ app.post("/api/bookings", (req, res) => {
     start,
     end,
     userEmail: userEmail || "unknown@smu.edu.sg",
+    status: "active",
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
   };
 
@@ -590,9 +591,59 @@ app.post("/api/bookings", (req, res) => {
   res.status(201).json(booking);
 });
 
+app.delete("/api/bookings/:id", (req, res) => {
+  const bookingId = req.params.id
+  const userEmail = req.headers["x-user-email"]
+
+  // AC1 — must be logged in
+  if (!userEmail) {
+    res.status(401).json({ message: "Please log in to cancel bookings." })
+    return
+  }
+
+  const bookingIndex = BOOKINGS.findIndex((b) => b.id === bookingId)
+
+  if (bookingIndex === -1) {
+    res.status(404).json({ message: "Booking not found." })
+    return
+  }
+
+  const booking = BOOKINGS[bookingIndex]
+
+  // AC2 — user must own the booking
+  if (booking.userEmail !== userEmail) {
+    res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." })
+    return
+  }
+
+  // AC6 — idempotent cancellation
+  if (booking.status === "cancelled") {
+    res.json({ message: "This booking is already cancelled." })
+    return
+  }
+
+  // AC3 + AC4 — mark cancelled and free slot
+  booking.status = "cancelled"
+
+  // AC8 — audit logging
+  console.log("BOOKING_CANCELLED", {
+    bookingId,
+    userEmail,
+    timestamp: new Date().toISOString(),
+  })
+
+  res.json({ message: "Booking cancelled successfully.", booking })
+})
+
+app.delete("/__debug/delete-test", (req, res) => {
+  res.json({ ok: true, method: "DELETE" })
+})
+
 app.get("/", (req, res) => {
   res.send("FBS 2.0 backend running");
 });
+
+app.get("/__debug/routes", (req, res) => res.json({ ok: true }));
 
 app.listen(3001, () => {
   console.log("Backend running on port 3001");
