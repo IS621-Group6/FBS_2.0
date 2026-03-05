@@ -59,3 +59,12 @@ CREATE TABLE booking_detail (
 
 CREATE INDEX idx_booking_detail_facility_time
   ON booking_detail (facility_id, start_time, end_time);
+  
+CREATE INDEX IF NOT EXISTS idx_facility_name
+ON facilities (facility_name);
+
+CREATE INDEX IF NOT EXISTS idx_facility_building
+ON facilities (building);
+
+CREATE INDEX IF NOT EXISTS idx_facility_capacity
+ON facilities (capacity);

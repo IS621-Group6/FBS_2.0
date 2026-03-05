@@ -1,8 +1,26 @@
 const express = require("express");
 const cors = require("cors");
 const { getDb, sqliteHealth } = require("./sqlite");
+const compression = require("compression");
+const NodeCache = require("node-cache");
 
 const app = express();
+
+const searchCache = new NodeCache({ stdTTL: 60 });
+
+app.use(compression());
+
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.originalUrl} ${duration}ms`);
+  });
+
+  next();
+});
+
 app.use(cors());
 app.use(express.json());
 
@@ -122,6 +140,15 @@ app.get("/api/health", (req, res) => {
 });
 
 app.get("/api/facilities", async (req, res) => {
+
+  const cacheKey = JSON.stringify(req.query);
+
+  const cachedResult = searchCache.get(cacheKey);
+
+  if (cachedResult) {
+    return res.json(cachedResult);
+  }
+
   const q = String(req.query.q || "").trim().toLowerCase();
   const minCapacity = Number(req.query.minCapacity || 0) || 0;
   const equipment = String(req.query.equipment || "")
@@ -186,6 +213,8 @@ app.get("/api/facilities", async (req, res) => {
       const safePage = Math.min(page, pageCount);
       const startIdx = (safePage - 1) * pageSize;
       const slice = items.slice(startIdx, startIdx + pageSize);
+
+      searchCache.set(cacheKey, { items: slice, total, page: safePage, pageSize, pageCount });
 
       res.json({ items: slice, total, page: safePage, pageSize, pageCount });
       return;
