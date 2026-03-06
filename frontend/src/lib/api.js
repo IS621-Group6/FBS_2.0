@@ -1,7 +1,10 @@
-async function request(path, { method = 'GET', body } = {}) {
+async function request(path, { method = 'GET', body, headers } = {}) {
   const res = await fetch(path, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+   headers: {
+  ...(body ? { 'Content-Type': 'application/json' } : {}),
+  ...(headers || {}),
+},
     body: body ? JSON.stringify(body) : undefined,
   })
 
@@ -63,4 +66,11 @@ export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }
   if (duration) sp.set('duration', String(duration))
   if (limit) sp.set('limit', String(limit))
   return request(`/api/availability-glimpse?${sp.toString()}`)
+}
+
+export function cancelBooking(id, userEmail) {
+  return request(`/api/bookings/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { 'x-user-email': userEmail },
+  })
 }
