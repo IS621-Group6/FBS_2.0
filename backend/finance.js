@@ -1,6 +1,6 @@
 // Simple in-memory financial helpers for demonstration purposes
 const STUDENT_ANNUAL_LIMIT = 4500;
-const _studentBalance = {}; // email -> remaining credits
+const _studentBalance = Object.create(null); // email -> remaining credits
 
 function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
