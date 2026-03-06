@@ -4,7 +4,7 @@ const _studentBalance = {}; // email -> remaining credits
 
 function getStudentBalance(email) {
   if (!email) return 0;
-  if (!_studentBalance[email]) _studentBalance[email] = STUDENT_ANNUAL_LIMIT;
+  if (_studentBalance[email] === undefined) _studentBalance[email] = STUDENT_ANNUAL_LIMIT;
   return _studentBalance[email];
 }
 
