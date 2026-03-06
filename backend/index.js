@@ -638,7 +638,7 @@ app.post("/api/bookings", (req, res) => {
         extra.costCentre = getCostCentre(email);
       }
       const emailBody = formatBookingConfirmation(userRole, extra);
-      console.log("SEND_EMAIL", { to: email, body: emailBody });
+      console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole });
 
       res.status(201).json({
         id: `B-${bookingId}`,
@@ -711,7 +711,7 @@ app.post("/api/bookings", (req, res) => {
     extra.costCentre = getCostCentre(email);
   }
   const emailBody = formatBookingConfirmation(userRole, extra);
-  console.log("SEND_EMAIL", { to: email, body: emailBody });
+  console.log("SEND_EMAIL", { bookingId: booking.id, userRole });
 
   res.status(201).json({ ...booking, ...extra });
 });
