@@ -842,6 +842,24 @@ app.put("/api/bookings/:id", (req, res) => {
       }
 
       const facilityDbId = Number(bookingRow.facility_id);
+
+      // Validate time range (HH:MM) and ensure end > start
+      const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+      if (!timePattern.test(start) || !timePattern.test(end)) {
+        res.status(400).json({ message: "Invalid time format. Expected HH:MM for start and end." });
+        return;
+      }
+
+      const [startHour, startMinute] = start.split(":").map(Number);
+      const [endHour, endMinute] = end.split(":").map(Number);
+      const startTotalMinutes = startHour * 60 + startMinute;
+      const endTotalMinutes = endHour * 60 + endMinute;
+
+      if (endTotalMinutes <= startTotalMinutes) {
+        res.status(400).json({ message: "Invalid time range. The end time must be after the start time." });
+        return;
+      }
       const startTs = `${date} ${start}:00`;
       const endTs = `${date} ${end}:00`;
 
