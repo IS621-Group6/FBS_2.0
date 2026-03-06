@@ -759,7 +759,7 @@ app.delete("/api/bookings/:id", (req, res) => {
 
   const booking = BOOKINGS[bookingIndex];
 
-  if (booking.userEmail !== userEmail) {
+  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
     res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
     return;
   }
