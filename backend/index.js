@@ -786,6 +786,177 @@ app.delete("/api/bookings/:id", (req, res) => {
   res.json({ message: "Booking cancelled successfully.", booking });
 })
 
+app.put("/api/bookings/:id", (req, res) => {
+  const bookingIdRaw = String(req.params.id || "").trim();
+  const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
+  const userEmail = String(req.headers["x-user-email"] || "").trim();
+  const { date, start, end } = req.body || {};
+
+  if (!userEmail) {
+    res.status(401).json({ message: "Please log in to modify bookings." });
+    return;
+  }
+
+  if (!date || !start || !end) {
+    res.status(400).json({ message: "Missing required fields: date, start, end" });
+    return;
+  }
+
+  const db = getDb();
+  if (db) {
+    try {
+      if (!Number.isFinite(bookingIdNumeric) || bookingIdNumeric <= 0) {
+        res.status(400).json({ message: "Invalid booking id." });
+        return;
+      }
+
+      // Check if booking exists and get ownership info
+      const bookingRow = db
+        .prepare(
+          `SELECT b.booking_id,
+                  b.status,
+                  u.email AS user_email,
+                  bd.facility_id,
+                  f.facility_code
+           FROM bookings b
+           JOIN users u ON u.user_id = b.user_id
+           JOIN booking_detail bd ON bd.booking_id = b.booking_id
+           JOIN facilities f ON f.facility_id = bd.facility_id
+           WHERE b.booking_id = ?`
+        )
+        .get(bookingIdNumeric);
+
+      if (!bookingRow) {
+        res.status(404).json({ message: "Booking not found." });
+        return;
+      }
+
+      // Check authorization
+      if (String(bookingRow.user_email).toLowerCase() !== userEmail.toLowerCase()) {
+        res.status(403).json({ message: "Unauthorised: cannot modify another user's booking." });
+        return;
+      }
+
+      const facilityDbId = Number(bookingRow.facility_id);
+      const startTs = `${date} ${start}:00`;
+      const endTs = `${date} ${end}:00`;
+
+      // Check for conflicts, excluding the current booking
+      const conflict = db
+        .prepare(
+          `SELECT booking_id AS id,
+                  substr(start_time, 12, 5) AS start,
+                  substr(end_time, 12, 5) AS end
+           FROM booking_detail
+           WHERE facility_id = ?
+             AND booking_id != ?
+             AND start_time < ?
+             AND end_time   > ?
+           LIMIT 1`
+        )
+        .get(facilityDbId, bookingIdNumeric, endTs, startTs);
+
+      if (conflict) {
+        res.status(409).json({
+          error: "CONFLICT",
+          message: "Selected time slot is no longer available.",
+        });
+        return;
+      }
+
+      // Update the booking
+      db.prepare(
+        `UPDATE booking_detail
+         SET start_time = ?, end_time = ?
+         WHERE booking_id = ?`
+      ).run(startTs, endTs, bookingIdNumeric);
+
+      console.log("BOOKING_MODIFIED", {
+        bookingId: `B-${bookingIdNumeric}`,
+        userEmail,
+        newTime: { date, start, end },
+        timestamp: new Date().toISOString(),
+      });
+
+      res.json({
+        message: "Booking updated successfully.",
+        booking: {
+          id: `B-${bookingIdNumeric}`,
+          facilityId: bookingRow.facility_code,
+          date,
+          start,
+          end,
+          userEmail,
+        },
+      });
+      return;
+    } catch (e) {
+      res.status(500).json({ message: e?.message || "Modification failed." });
+      return;
+    }
+  }
+
+  // Fallback to in-memory implementation
+  const bookingIdString = String(bookingIdRaw);
+  const normalizedBookingId = bookingIdString.startsWith("B-")
+    ? bookingIdString
+    : `B-${bookingIdString}`;
+
+  const bookingIndex = BOOKINGS.findIndex(
+    (b) => b.id === bookingIdString || b.id === normalizedBookingId
+  );
+  if (bookingIndex === -1) {
+    res.status(404).json({ message: "Booking not found." });
+    return;
+  }
+
+  const booking = BOOKINGS[bookingIndex];
+
+  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
+    res.status(403).json({ message: "Unauthorised: cannot modify another user's booking." });
+    return;
+  }
+
+  const startMin = toMinutes(start);
+  const endMin = toMinutes(end);
+  if (startMin === null || endMin === null || endMin <= startMin) {
+    res.status(400).json({ message: "Invalid time range" });
+    return;
+  }
+
+  // Check for conflicts with other bookings (excluding this one)
+  const existing = BOOKINGS.filter(
+    (b) => b.facilityId === booking.facilityId && b.date === date && b.id !== booking.id
+  );
+  const conflict = existing.find((b) => {
+    const bStart = toMinutes(b.start);
+    const bEnd = toMinutes(b.end);
+    return overlaps(startMin, endMin, bStart, bEnd);
+  });
+
+  if (conflict) {
+    res.status(409).json({
+      error: "CONFLICT",
+      message: "Selected time slot is no longer available.",
+    });
+    return;
+  }
+
+  // Update the booking
+  booking.date = date;
+  booking.start = start;
+  booking.end = end;
+
+  console.log("BOOKING_MODIFIED", {
+    bookingId: bookingIdRaw,
+    userEmail,
+    newTime: { date, start, end },
+    timestamp: new Date().toISOString(),
+  });
+
+  res.json({ message: "Booking updated successfully.", booking });
+})
+
 app.delete("/__debug/delete-test", (req, res) => {
   res.json({ ok: true, method: "DELETE" })
 })
