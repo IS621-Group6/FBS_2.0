@@ -1,6 +1,11 @@
 const express = require("express");
 const cors = require("cors");
 const { getDb, sqliteHealth } = require("./sqlite");
+
+// helpers for real-time cost/credit snapshots
+const { deductCredits, getCostCentre } = require("./finance");
+const { formatBookingConfirmation } = require("./emailTemplates");
+
 const compression = require("compression");
 const NodeCache = require("node-cache");
 
@@ -542,6 +547,8 @@ app.get("/api/bookings", (req, res) => {
 
 app.post("/api/bookings", (req, res) => {
   const { facilityId, date, start, end, userEmail, reason } = req.body || {};
+  // role may come from a header or the body; default to student for sanity
+  const userRole = String(req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
 
   if (!facilityId || !date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
@@ -589,7 +596,7 @@ app.post("/api/bookings", (req, res) => {
         return;
       }
 
-      const email = String(userEmail || "guest@smu.edu.sg").trim();
+      const email = String(userEmail || "guest@smu.edu.sg").trim().toLowerCase();
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
 
       const tx = db.transaction(() => {
@@ -621,6 +628,18 @@ app.post("/api/bookings", (req, res) => {
       });
 
       const bookingId = tx();
+      // compute role‑aware financial snapshot
+      let extra = {};
+      if (userRole === "student") {
+        // for demo every booking costs 100 credits
+        const { deducted, remaining } = deductCredits(email, 100);
+        extra = { deducted, creditsRemaining: remaining };
+      } else if (userRole === "staff") {
+        extra.costCentre = getCostCentre(email);
+      }
+      const emailBody = formatBookingConfirmation(userRole, extra);
+      console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole });
+
       res.status(201).json({
         id: `B-${bookingId}`,
         facilityId,
@@ -629,6 +648,7 @@ app.post("/api/bookings", (req, res) => {
         end,
         userEmail: email,
         reason: reasonTrimmed || undefined,
+        ...extra,
       });
       return;
     } catch (e) {
@@ -668,19 +688,32 @@ app.post("/api/bookings", (req, res) => {
     return;
   }
 
+  const email = String(userEmail || "unknown@smu.edu.sg").trim().toLowerCase();
+
   const booking = {
     id: nextBookingId(),
     facilityId,
     date,
     start,
     end,
-    userEmail: userEmail || "unknown@smu.edu.sg",
+    userEmail: email,
     status: "active",
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
   };
 
   BOOKINGS.push(booking);
-  res.status(201).json(booking);
+  // compute extras for in-memory case
+  let extra = {};
+  if (userRole === "student") {
+    const { deducted, remaining } = deductCredits(email, 100);
+    extra = { deducted, creditsRemaining: remaining };
+  } else if (userRole === "staff") {
+    extra.costCentre = getCostCentre(email);
+  }
+  const emailBody = formatBookingConfirmation(userRole, extra);
+  console.log("SEND_EMAIL", { bookingId: booking.id, userRole });
+
+  res.status(201).json({ ...booking, ...extra });
 });
 
 app.delete("/api/bookings/:id", (req, res) => {
@@ -796,6 +829,12 @@ app.get("/", (req, res) => {
 
 app.get("/__debug/routes", (req, res) => res.json({ ok: true }));
 
-app.listen(3001, () => {
-  console.log("Backend running on port 3001");
+if (require.main === module) {
+  app.listen(3001, () => {
+    console.log("Backend running on port 3001");
+  });
+} else {
+  // when the file is required (e.g. from tests) we just export the app
+  module.exports = app;
+
 });

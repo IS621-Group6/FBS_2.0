@@ -53,6 +53,8 @@ export default function BookingConfirmPage() {
     }
   }, [facilityId])
 
+  const userRole = user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff'
+
   const submit = async () => {
     if (!reasonTrimmed) {
       return
@@ -68,8 +70,9 @@ export default function BookingConfirmPage() {
         end,
         userEmail,
         reason: reasonTrimmed,
+        userRole,
       })
-      navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`)
+      navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`, { state: { financial: booking } })
     } catch (e) {
       if (e.status === 409 && e.data?.error === 'DOUBLE_BOOKING') {
         // Show prominent alert for concurrent booking conflict
