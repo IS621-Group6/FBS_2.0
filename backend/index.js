@@ -596,7 +596,7 @@ app.post("/api/bookings", (req, res) => {
         return;
       }
 
-      const email = String(userEmail || "guest@smu.edu.sg").trim();
+      const email = String(userEmail || "guest@smu.edu.sg").trim().toLowerCase();
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
 
       const tx = db.transaction(() => {
@@ -688,13 +688,15 @@ app.post("/api/bookings", (req, res) => {
     return;
   }
 
+  const email = String(userEmail || "unknown@smu.edu.sg").trim().toLowerCase();
+
   const booking = {
     id: nextBookingId(),
     facilityId,
     date,
     start,
     end,
-    userEmail: userEmail || "unknown@smu.edu.sg",
+    userEmail: email,
     status: "active",
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
   };
@@ -702,7 +704,6 @@ app.post("/api/bookings", (req, res) => {
   BOOKINGS.push(booking);
   // compute extras for in-memory case
   let extra = {};
-  const email = String(userEmail || "unknown@smu.edu.sg").trim();
   if (userRole === "student") {
     const { deducted, remaining } = deductCredits(email, 100);
     extra = { deducted, creditsRemaining: remaining };
