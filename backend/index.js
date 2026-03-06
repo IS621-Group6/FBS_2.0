@@ -704,7 +704,8 @@ app.post("/api/bookings", (req, res) => {
   let extra = {};
   const email = String(userEmail || "unknown@smu.edu.sg").trim();
   if (userRole === "student") {
-    extra = deductCredits(email, 100);
+    const { deducted, remaining } = deductCredits(email, 100);
+    extra = { deducted, creditsRemaining: remaining };
   } else if (userRole === "staff") {
     extra.costCentre = getCostCentre(email);
   }
