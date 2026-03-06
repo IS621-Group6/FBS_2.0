@@ -841,8 +841,9 @@ app.put("/api/bookings/:id", (req, res) => {
         return;
       }
 
-      // Ensure only active bookings can be modified
-      if (String(bookingRow.status).toLowerCase() !== "active") {
+      // Allow modification for non-cancelled bookings (e.g. CONFIRMED/ACTIVE)
+      const bookingStatus = String(bookingRow.status || "").toLowerCase();
+      if (bookingStatus === "cancelled") {
         res.status(409).json({
           error: "NOT_MODIFIABLE",
           message: "This booking can no longer be modified.",
