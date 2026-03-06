@@ -18,7 +18,12 @@ function deductCredits(email, amount) {
   if (!key) return { deducted: 0, remaining: 0 };
 
   const current = getStudentBalance(key);
-  const deducted = Math.min(amount, current);
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    return { deducted: 0, remaining: current };
+  }
+
+  const deducted = Math.min(numericAmount, current);
   _studentBalance[key] = current - deducted;
   return { deducted, remaining: _studentBalance[key] };
 }
