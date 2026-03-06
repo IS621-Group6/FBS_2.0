@@ -78,3 +78,11 @@ export function cancelBooking(id, userEmail) {
     headers: { 'x-user-email': userEmail },
   })
 }
+
+export function modifyBooking(id, payload, userEmail) {
+  return request(`/api/bookings/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: payload,
+    headers: { 'x-user-email': userEmail },
+  })
+}
