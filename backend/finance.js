@@ -2,17 +2,25 @@
 const STUDENT_ANNUAL_LIMIT = 4500;
 const _studentBalance = {}; // email -> remaining credits
 
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
 function getStudentBalance(email) {
-  if (!email) return 0;
-  if (_studentBalance[email] === undefined) _studentBalance[email] = STUDENT_ANNUAL_LIMIT;
-  return _studentBalance[email];
+  const key = normalizeEmail(email);
+  if (!key) return 0;
+  if (_studentBalance[key] === undefined) _studentBalance[key] = STUDENT_ANNUAL_LIMIT;
+  return _studentBalance[key];
 }
 
 function deductCredits(email, amount) {
-  const current = getStudentBalance(email);
+  const key = normalizeEmail(email);
+  if (!key) return { deducted: 0, remaining: 0 };
+
+  const current = getStudentBalance(key);
   const deducted = Math.min(amount, current);
-  _studentBalance[email] = current - deducted;
-  return { deducted, remaining: _studentBalance[email] };
+  _studentBalance[key] = current - deducted;
+  return { deducted, remaining: _studentBalance[key] };
 }
 
 function getCostCentre(email) {
