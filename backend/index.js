@@ -750,8 +750,14 @@ app.delete("/api/bookings/:id", (req, res) => {
     }
   }
 
-  const bookingIndex = BOOKINGS.findIndex((b) => b.id === bookingIdRaw);
+  const bookingIdString = String(bookingIdRaw);
+  const normalizedBookingId = bookingIdString.startsWith("B-")
+    ? bookingIdString
+    : `B-${bookingIdString}`;
 
+  const bookingIndex = BOOKINGS.findIndex(
+    (b) => b.id === bookingIdString || b.id === normalizedBookingId
+  );
   if (bookingIndex === -1) {
     res.status(404).json({ message: "Booking not found." });
     return;
