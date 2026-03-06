@@ -203,12 +203,12 @@ export default function SearchPage() {
     <AppShell>
       <div className="container">
         <div className="stack">
+          <BookingProgressBar currentStep={1} onStepClick={null} />
+
           <div>
             <h1 className="h1">Search, filter, and book</h1>
             <div className="muted2">Search-first booking for thousands of rooms.</div>
           </div>
-
-          <BookingProgressBar currentStep={1} />
 
           <div className="card cardPad">
             <div className="stack" style={{ gap: 12 }}>

@@ -85,16 +85,24 @@ export default function BookingConfirmPage() {
     }
   }
 
+  const handleProgressBarClick = (stepNumber) => {
+    if (stepNumber === 1) {
+      navigate(returnContext ? `/search?${returnContext}` : '/search')
+    } else if (stepNumber === 2) {
+      navigate(calendarUrl)
+    }
+  }
+
   return (
     <AppShell>
       <div className="containerNarrow">
-        <div className="stack">
+        <div className="stack" style={{ paddingBottom: '200px' }}>
+          <BookingProgressBar currentStep={3} onStepClick={handleProgressBarClick} />
+
           <div>
             <h1 className="h1">Confirm booking</h1>
             <div className="muted2">Review details before submitting.</div>
           </div>
-
-          <BookingProgressBar currentStep={3} />
 
           <div className="card cardPad">
             <div className="stack">

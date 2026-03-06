@@ -97,10 +97,18 @@ export default function FacilityCalendarPage() {
     navigate(`/booking/confirm?${confirmSp.toString()}`)
   }
 
+  const handleProgressBarClick = (stepNumber) => {
+    if (stepNumber === 1) {
+      navigate(searchContext ? `/search?${searchContext}` : '/search')
+    }
+  }
+
   return (
     <AppShell>
       <div className="container">
         <div className="stack">
+          <BookingProgressBar currentStep={2} onStepClick={handleProgressBarClick} />
+
           <div>
             <h1 className="h1">Availability</h1>
             <div className="muted">
@@ -113,8 +121,6 @@ export default function FacilityCalendarPage() {
               )}
             </div>
           </div>
-
-          <BookingProgressBar currentStep={2} />
 
           <Link className="btn" to={searchContext ? `/search?${searchContext}` : '/search'} style={{ alignSelf: 'flex-start' }}>
             ← Back to results
