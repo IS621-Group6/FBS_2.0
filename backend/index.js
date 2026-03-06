@@ -841,6 +841,14 @@ app.put("/api/bookings/:id", (req, res) => {
         return;
       }
 
+      // Ensure only active bookings can be modified
+      if (String(bookingRow.status).toLowerCase() !== "active") {
+        res.status(409).json({
+          error: "NOT_MODIFIABLE",
+          message: "This booking can no longer be modified.",
+        });
+        return;
+      }
       const facilityDbId = Number(bookingRow.facility_id);
 
       // Validate time range (HH:MM) and ensure end > start
