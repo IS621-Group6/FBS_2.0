@@ -548,7 +548,7 @@ app.get("/api/bookings", (req, res) => {
 app.post("/api/bookings", (req, res) => {
   const { facilityId, date, start, end, userEmail, reason } = req.body || {};
   // role may come from a header or the body; default to student for sanity
-  const userRole = String(req.headers["x-user-role"] || req.body.userRole || "student").toLowerCase();
+  const userRole = String(req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
 
   if (!facilityId || !date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
