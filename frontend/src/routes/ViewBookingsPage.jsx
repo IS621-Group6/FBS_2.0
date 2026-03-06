@@ -226,7 +226,7 @@ export default function ViewBookingsPage() {
               justifyContent: 'center',
               zIndex: 1000,
             }}
-            onClick={handleCloseModify}
+            onClick={isModifying ? undefined : handleCloseModify}
           >
             <div
               className="card cardPad"
