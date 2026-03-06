@@ -58,6 +58,13 @@ export function createBooking(payload) {
   return request('/api/bookings', { method: 'POST', body: payload })
 }
 
+export function getBookings(userEmail) {
+  const sp = new URLSearchParams()
+  if (userEmail) sp.set('userEmail', userEmail)
+  const qs = sp.toString()
+  return request(`/api/bookings${qs ? `?${qs}` : ''}`)
+}
+
 export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }) {
   const sp = new URLSearchParams()
   if (ids?.length) sp.set('ids', ids.join(','))
