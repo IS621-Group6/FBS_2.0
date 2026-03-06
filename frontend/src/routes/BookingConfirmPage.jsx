@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import BookingProgressBar from '../components/BookingProgressBar'
 import { createBooking, getFacility } from '../lib/api'
 import useAuth from '../lib/useAuth'
 
@@ -84,10 +85,20 @@ export default function BookingConfirmPage() {
     }
   }
 
+  const handleProgressBarClick = (stepNumber) => {
+    if (stepNumber === 1) {
+      navigate(returnContext ? `/search?${returnContext}` : '/search')
+    } else if (stepNumber === 2) {
+      navigate(calendarUrl)
+    }
+  }
+
   return (
     <AppShell>
       <div className="containerNarrow">
-        <div className="stack">
+        <div className="stack" style={{ paddingBottom: '200px' }}>
+          <BookingProgressBar currentStep={3} onStepClick={handleProgressBarClick} />
+
           <div>
             <h1 className="h1">Confirm booking</h1>
             <div className="muted2">Review details before submitting.</div>

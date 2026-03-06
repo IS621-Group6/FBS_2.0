@@ -301,8 +301,10 @@ app.get("/api/facilities/:id/availability", (req, res) => {
                   substr(bd.end_time, 12, 5) AS end
            FROM booking_detail bd
            JOIN facilities f ON f.facility_id = bd.facility_id
+           JOIN bookings b ON b.booking_id = bd.booking_id
            WHERE f.facility_code = ?
              AND date(bd.start_time) = date(?)
+             AND (b.status IS NULL OR LOWER(b.status) != 'cancelled')
            ORDER BY bd.start_time ASC`
         )
         .all(req.params.id, date);
@@ -325,7 +327,7 @@ app.get("/api/facilities/:id/availability", (req, res) => {
   }
 
   const reservations = BOOKINGS.filter(
-    (b) => b.facilityId === facility.id && b.date === date
+    (b) => b.facilityId === facility.id && b.date === date && String(b.status || 'active').toLowerCase() !== 'cancelled'
   ).map((b) => ({ id: b.id, start: b.start, end: b.end }));
 
   res.json({ facilityId: facility.id, date, reservations });
@@ -397,10 +399,12 @@ app.get("/api/availability-glimpse", (req, res) => {
 
       const bookings = db
         .prepare(
-          `SELECT facility_id, start_time, end_time, booking_id AS id
-           FROM booking_detail
-           WHERE facility_id IN (${numericIds.map(() => "?").join(",")})
-             AND date(start_time) = date(?)`
+          `SELECT bd.facility_id, bd.start_time, bd.end_time, bd.booking_id AS id
+           FROM booking_detail bd
+           JOIN bookings b ON b.booking_id = bd.booking_id
+           WHERE bd.facility_id IN (${numericIds.map(() => "?").join(",")})
+             AND date(bd.start_time) = date(?)
+             AND (b.status IS NULL OR LOWER(b.status) != 'cancelled')`
         )
         .all(...numericIds, date);
 
@@ -651,7 +655,7 @@ app.post("/api/bookings", (req, res) => {
   }
 
   const existing = BOOKINGS.filter(
-    (b) => b.facilityId === facilityId && b.date === date
+    (b) => b.facilityId === facilityId && b.date === date && String(b.status || 'active').toLowerCase() !== 'cancelled'
   );
   const conflict = existing.find((b) => {
     const bStart = toMinutes(b.start);
@@ -784,6 +788,179 @@ app.delete("/api/bookings/:id", (req, res) => {
   });
 
   res.json({ message: "Booking cancelled successfully.", booking });
+})
+
+app.put("/api/bookings/:id", (req, res) => {
+  const bookingIdRaw = String(req.params.id || "").trim();
+  const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
+  const userEmail = String(req.headers["x-user-email"] || "").trim();
+  const { date, start, end } = req.body || {};
+
+  if (!userEmail) {
+    res.status(401).json({ message: "Please log in to modify bookings." });
+    return;
+  }
+
+  if (!date || !start || !end) {
+    res.status(400).json({ message: "Missing required fields: date, start, end" });
+    return;
+  }
+
+  const db = getDb();
+  if (db) {
+    try {
+      if (!Number.isFinite(bookingIdNumeric) || bookingIdNumeric <= 0) {
+        res.status(400).json({ message: "Invalid booking id." });
+        return;
+      }
+
+      // Check if booking exists and get ownership info
+      const bookingRow = db
+        .prepare(
+          `SELECT b.booking_id,
+                  b.status,
+                  u.email AS user_email,
+                  bd.facility_id,
+                  f.facility_code
+           FROM bookings b
+           JOIN users u ON u.user_id = b.user_id
+           JOIN booking_detail bd ON bd.booking_id = b.booking_id
+           JOIN facilities f ON f.facility_id = bd.facility_id
+           WHERE b.booking_id = ?`
+        )
+        .get(bookingIdNumeric);
+
+      if (!bookingRow) {
+        res.status(404).json({ message: "Booking not found." });
+        return;
+      }
+
+      // Check authorization
+      if (String(bookingRow.user_email).toLowerCase() !== userEmail.toLowerCase()) {
+        res.status(403).json({ message: "Unauthorised: cannot modify another user's booking." });
+        return;
+      }
+
+      const facilityDbId = Number(bookingRow.facility_id);
+      const startTs = `${date} ${start}:00`;
+      const endTs = `${date} ${end}:00`;
+
+  // Check for conflicts, excluding the current booking and cancelled bookings
+      const conflict = db
+        .prepare(
+          `SELECT bd.booking_id AS id,
+                  substr(bd.start_time, 12, 5) AS start,
+                  substr(bd.end_time, 12, 5) AS end
+           FROM booking_detail bd
+           JOIN bookings b ON b.booking_id = bd.booking_id
+           WHERE bd.facility_id = ?
+             AND bd.booking_id != ?
+             AND bd.start_time < ?
+             AND bd.end_time   > ?
+             AND (b.status IS NULL OR LOWER(b.status) != 'cancelled')
+           LIMIT 1`
+        )
+        .get(facilityDbId, bookingIdNumeric, endTs, startTs);
+
+      if (conflict) {
+        res.status(409).json({
+          error: "CONFLICT",
+          message: "Selected time slot is no longer available.",
+        });
+        return;
+      }
+
+      // Update the booking
+      db.prepare(
+        `UPDATE booking_detail
+         SET start_time = ?, end_time = ?
+         WHERE booking_id = ?`
+      ).run(startTs, endTs, bookingIdNumeric);
+
+      console.log("BOOKING_MODIFIED", {
+        bookingId: `B-${bookingIdNumeric}`,
+        userEmail,
+        newTime: { date, start, end },
+        timestamp: new Date().toISOString(),
+      });
+
+      res.json({
+        message: "Booking updated successfully.",
+        booking: {
+          id: `B-${bookingIdNumeric}`,
+          facilityId: bookingRow.facility_code,
+          date,
+          start,
+          end,
+          userEmail,
+        },
+      });
+      return;
+    } catch (e) {
+      res.status(500).json({ message: e?.message || "Modification failed." });
+      return;
+    }
+  }
+
+  // Fallback to in-memory implementation
+  const bookingIdString = String(bookingIdRaw);
+  const normalizedBookingId = bookingIdString.startsWith("B-")
+    ? bookingIdString
+    : `B-${bookingIdString}`;
+
+  const bookingIndex = BOOKINGS.findIndex(
+    (b) => b.id === bookingIdString || b.id === normalizedBookingId
+  );
+  if (bookingIndex === -1) {
+    res.status(404).json({ message: "Booking not found." });
+    return;
+  }
+
+  const booking = BOOKINGS[bookingIndex];
+
+  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
+    res.status(403).json({ message: "Unauthorised: cannot modify another user's booking." });
+    return;
+  }
+
+  const startMin = toMinutes(start);
+  const endMin = toMinutes(end);
+  if (startMin === null || endMin === null || endMin <= startMin) {
+    res.status(400).json({ message: "Invalid time range" });
+    return;
+  }
+
+  // Check for conflicts with other bookings (excluding this one)
+  const existing = BOOKINGS.filter(
+    (b) => b.facilityId === booking.facilityId && b.date === date && b.id !== booking.id
+  );
+  const conflict = existing.find((b) => {
+    const bStart = toMinutes(b.start);
+    const bEnd = toMinutes(b.end);
+    return overlaps(startMin, endMin, bStart, bEnd);
+  });
+
+  if (conflict) {
+    res.status(409).json({
+      error: "CONFLICT",
+      message: "Selected time slot is no longer available.",
+    });
+    return;
+  }
+
+  // Update the booking
+  booking.date = date;
+  booking.start = start;
+  booking.end = end;
+
+  console.log("BOOKING_MODIFIED", {
+    bookingId: bookingIdRaw,
+    userEmail,
+    newTime: { date, start, end },
+    timestamp: new Date().toISOString(),
+  });
+
+  res.json({ message: "Booking updated successfully.", booking });
 })
 
 app.delete("/__debug/delete-test", (req, res) => {
