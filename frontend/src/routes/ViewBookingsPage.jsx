@@ -18,6 +18,8 @@ export default function ViewBookingsPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [isCancellingById, setIsCancellingById] = useState({})
+  const [confirmCancel, setConfirmCancel] = useState(null)
+  const [cancelSuccess, setCancelSuccess] = useState(null)
 
   const activeCount = useMemo(() => items.filter((item) => formatStatus(item.status) === 'active').length, [items])
 
@@ -40,12 +42,15 @@ export default function ViewBookingsPage() {
     loadBookings()
   }, [userEmail])
 
-  const handleCancel = async (bookingId) => {
-    if (!bookingId || !userEmail) return
+  const handleCancel = async (booking) => {
+    if (!booking || !userEmail) return
+    const bookingId = String(booking.id || '').replace(/^B-/, '')
     setIsCancellingById((prev) => ({ ...prev, [bookingId]: true }))
     try {
       await cancelBooking(bookingId, userEmail)
       await loadBookings()
+      setCancelSuccess(booking.id)
+      setConfirmCancel(null)
     } catch (e) {
       alert(e?.message || 'Unable to cancel booking')
     } finally {
@@ -138,7 +143,7 @@ export default function ViewBookingsPage() {
                         <button
                           className="btn btnPrimary"
                           type="button"
-                          onClick={() => handleCancel(plainId)}
+                          onClick={() => setConfirmCancel(booking)}
                           disabled={!canCancel || isCancelling}
                         >
                           {isCancelling ? 'Cancelling…' : canCancel ? 'Cancel booking' : 'Not cancellable'}
@@ -152,6 +157,75 @@ export default function ViewBookingsPage() {
           ) : null}
         </div>
       </div>
+
+      {confirmCancel ? (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="card cardPad" style={{ maxWidth: 400, width: '100%', margin: 'var(--space-6)' }}>
+            <div className="stack" style={{ gap: 16 }}>
+              <div className="h2">Cancel Booking</div>
+              <div>
+                Are you sure you want to cancel this booking?
+                <br />
+                <strong>Booking ID:</strong> {confirmCancel.id}
+                <br />
+                <strong>Date:</strong> {confirmCancel.date}
+                <br />
+                <strong>Time:</strong> {confirmCancel.start}–{confirmCancel.end}
+              </div>
+              <div className="row" style={{ gap: 12 }}>
+                <button className="btn" onClick={() => setConfirmCancel(null)}>
+                  Keep Booking
+                </button>
+                <button className="btn btnPrimary" onClick={() => handleCancel(confirmCancel)}>
+                  Cancel Booking
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {cancelSuccess ? (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="card cardPad" style={{ maxWidth: 400, width: '100%', margin: 'var(--space-6)' }}>
+            <div className="stack" style={{ gap: 16 }}>
+              <div className="h2">Booking Cancelled</div>
+              <div>
+                Confirmed. Your booking was cancelled.
+                <br />
+                <strong>Booking ID:</strong> {cancelSuccess}
+              </div>
+              <div className="row">
+                <button className="btn btnPrimary" onClick={() => setCancelSuccess(null)}>
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </AppShell>
   )
 }
