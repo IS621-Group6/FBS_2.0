@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import BookingProgressBar from '../components/BookingProgressBar'
 import CalendarGrid from '../components/CalendarGrid'
 import { getAvailability, getFacility } from '../lib/api'
 import { isoToday, overlaps, parseTimeToMinutes } from '../lib/time'
@@ -100,23 +101,24 @@ export default function FacilityCalendarPage() {
     <AppShell>
       <div className="container">
         <div className="stack">
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div>
-              <h1 className="h1">Availability</h1>
-              <div className="muted">
-                {facility ? (
-                  <>
-                    {facility.name} • {facility.campus}
-                  </>
-                ) : (
-                  'Loading facility…'
-                )}
-              </div>
+          <div>
+            <h1 className="h1">Availability</h1>
+            <div className="muted">
+              {facility ? (
+                <>
+                  {facility.name} • {facility.campus}
+                </>
+              ) : (
+                'Loading facility…'
+              )}
             </div>
-            <Link className="btn" to={searchContext ? `/search?${searchContext}` : '/search'}>
-              Back to results
-            </Link>
           </div>
+
+          <BookingProgressBar currentStep={2} />
+
+          <Link className="btn" to={searchContext ? `/search?${searchContext}` : '/search'} style={{ alignSelf: 'flex-start' }}>
+            ← Back to results
+          </Link>
 
           <div className="gridSidebar">
             <aside className="card cardPad">

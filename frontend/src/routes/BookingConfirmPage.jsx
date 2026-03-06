@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import BookingProgressBar from '../components/BookingProgressBar'
 import { createBooking, getFacility } from '../lib/api'
 import useAuth from '../lib/useAuth'
 
@@ -92,6 +93,8 @@ export default function BookingConfirmPage() {
             <h1 className="h1">Confirm booking</h1>
             <div className="muted2">Review details before submitting.</div>
           </div>
+
+          <BookingProgressBar currentStep={3} />
 
           <div className="card cardPad">
             <div className="stack">

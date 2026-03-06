@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import BookingProgressBar from '../components/BookingProgressBar'
 import FacilityCard from '../components/FacilityCard'
 import Pagination from '../components/Pagination'
 import { getAvailabilityGlimpse, searchFacilities } from '../lib/api'
@@ -202,15 +203,12 @@ export default function SearchPage() {
     <AppShell>
       <div className="container">
         <div className="stack">
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div>
-              <h1 className="h1">Search, filter, and book</h1>
-              <div className="muted2">Search-first booking for thousands of rooms.</div>
-            </div>
-            <button className="btn" onClick={clearFilters}>
-              Reset filters
-            </button>
+          <div>
+            <h1 className="h1">Search, filter, and book</h1>
+            <div className="muted2">Search-first booking for thousands of rooms.</div>
           </div>
+
+          <BookingProgressBar currentStep={1} />
 
           <div className="card cardPad">
             <div className="stack" style={{ gap: 12 }}>
