@@ -87,6 +87,12 @@ export default function FacilityCalendarPage() {
   }, [id, date])
 
   const proceed = () => {
+    // prevent past-date navigation, double-check even though backend also validates
+    if (date < isoToday()) {
+      alert("You can't book a past date/time. Please choose a future slot.")
+      return
+    }
+
     const confirmSp = new URLSearchParams()
     confirmSp.set('facilityId', id)
     confirmSp.set('date', date)
@@ -125,7 +131,22 @@ export default function FacilityCalendarPage() {
 
                 <div className="field">
                   <div className="label">Date</div>
-                  <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                  <input className="input" type="date" value={date} min={isoToday()} onChange={(e) => {
+                    const selected = e.target.value
+                    if (selected < isoToday()) {
+                      alert("You can't book a past date/time. Please choose a future slot.")
+                      return
+                    }
+                    setDate(selected)}
+                  }
+                  />
+                  {date < isoToday() && (
+                    <div className="alert alertDanger">
+                      <div style={{ color: 'var(--danger)', fontSize: 14 }}>
+                        ⚠️ You can’t choose a past date.
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="field">
@@ -154,7 +175,11 @@ export default function FacilityCalendarPage() {
                   </div>
                 )}
 
-                <button className="btn btnPrimary" onClick={proceed} disabled={!selectedStart || !end || isLoading || hasOverlap}>
+                <button
+                  className="btn btnPrimary"
+                  onClick={proceed}
+                  disabled={!selectedStart || !end || isLoading || hasOverlap || date < isoToday()}
+                >
                   Continue to confirmation
                 </button>
 
