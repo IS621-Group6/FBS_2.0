@@ -477,6 +477,69 @@ app.get("/api/availability-glimpse", (req, res) => {
   res.json({ date, duration, items });
 });
 
+app.get("/api/bookings", (req, res) => {
+  const userEmail = String(req.query.userEmail || req.headers["x-user-email"] || "").trim();
+
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = db
+        .prepare(
+          `SELECT b.booking_id,
+                  b.status,
+                  b.booking_reason,
+                  u.email AS user_email,
+                  f.facility_code,
+                  f.facility_name,
+                  substr(bd.start_time, 1, 10) AS booking_date,
+                  substr(bd.start_time, 12, 5) AS start_time,
+                  substr(bd.end_time, 12, 5) AS end_time
+           FROM bookings b
+           JOIN users u ON u.user_id = b.user_id
+           JOIN booking_detail bd ON bd.booking_id = b.booking_id
+           JOIN facilities f ON f.facility_id = bd.facility_id
+           WHERE (? = '' OR lower(u.email) = lower(?))
+           ORDER BY bd.start_time DESC, b.booking_id DESC`
+        )
+        .all(userEmail, userEmail);
+
+      const items = rows.map((row) => ({
+        id: `B-${row.booking_id}`,
+        facilityId: row.facility_code,
+        facilityName: row.facility_name,
+        date: row.booking_date,
+        start: row.start_time,
+        end: row.end_time,
+        userEmail: row.user_email,
+        reason: row.booking_reason || undefined,
+        status: String(row.status || "CONFIRMED").toLowerCase(),
+      }));
+
+      res.json({ items });
+      return;
+    } catch (e) {
+      res.status(500).json({ message: e?.message || "Failed to load bookings" });
+      return;
+    }
+  }
+
+  const items = BOOKINGS
+    .filter((booking) => !userEmail || String(booking.userEmail).toLowerCase() === userEmail.toLowerCase())
+    .map((booking) => ({
+      id: booking.id,
+      facilityId: booking.facilityId,
+      date: booking.date,
+      start: booking.start,
+      end: booking.end,
+      userEmail: booking.userEmail,
+      reason: booking.reason,
+      status: booking.status || "active",
+    }))
+    .sort((a, b) => `${b.date} ${b.start}`.localeCompare(`${a.date} ${a.start}`));
+
+  res.json({ items });
+});
+
 app.post("/api/bookings", (req, res) => {
   const { facilityId, date, start, end, userEmail, reason } = req.body || {};
 
@@ -621,47 +684,106 @@ app.post("/api/bookings", (req, res) => {
 });
 
 app.delete("/api/bookings/:id", (req, res) => {
-  const bookingId = req.params.id
-  const userEmail = req.headers["x-user-email"]
+  const bookingIdRaw = String(req.params.id || "").trim();
+  const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
+  const userEmail = String(req.headers["x-user-email"] || "").trim();
 
-  // AC1 — must be logged in
   if (!userEmail) {
-    res.status(401).json({ message: "Please log in to cancel bookings." })
-    return
+    res.status(401).json({ message: "Please log in to cancel bookings." });
+    return;
   }
 
-  const bookingIndex = BOOKINGS.findIndex((b) => b.id === bookingId)
+  const db = getDb();
+  if (db) {
+    try {
+      if (!Number.isFinite(bookingIdNumeric) || bookingIdNumeric <= 0) {
+        res.status(400).json({ message: "Invalid booking id." });
+        return;
+      }
 
+      const bookingRow = db
+        .prepare(
+          `SELECT b.booking_id,
+                  b.status,
+                  u.email AS user_email
+           FROM bookings b
+           JOIN users u ON u.user_id = b.user_id
+           WHERE b.booking_id = ?`
+        )
+        .get(bookingIdNumeric);
+
+      if (!bookingRow) {
+        res.status(404).json({ message: "Booking not found." });
+        return;
+      }
+
+      if (String(bookingRow.user_email).toLowerCase() !== userEmail.toLowerCase()) {
+        res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
+        return;
+      }
+
+      if (String(bookingRow.status || "").toLowerCase() === "cancelled") {
+        res.json({ message: "This booking is already cancelled." });
+        return;
+      }
+
+      db.prepare(`UPDATE bookings SET status = 'cancelled' WHERE booking_id = ?`).run(bookingIdNumeric);
+
+      console.log("BOOKING_CANCELLED", {
+        bookingId: `B-${bookingIdNumeric}`,
+        userEmail,
+        timestamp: new Date().toISOString(),
+      });
+
+      res.json({
+        message: "Booking cancelled successfully.",
+        booking: {
+          id: `B-${bookingIdNumeric}`,
+          userEmail,
+          status: "cancelled",
+        },
+      });
+      return;
+    } catch (e) {
+      res.status(500).json({ message: e?.message || "Cancellation failed." });
+      return;
+    }
+  }
+
+  const bookingIdString = String(bookingIdRaw);
+  const normalizedBookingId = bookingIdString.startsWith("B-")
+    ? bookingIdString
+    : `B-${bookingIdString}`;
+
+  const bookingIndex = BOOKINGS.findIndex(
+    (b) => b.id === bookingIdString || b.id === normalizedBookingId
+  );
   if (bookingIndex === -1) {
-    res.status(404).json({ message: "Booking not found." })
-    return
+    res.status(404).json({ message: "Booking not found." });
+    return;
   }
 
-  const booking = BOOKINGS[bookingIndex]
+  const booking = BOOKINGS[bookingIndex];
 
-  // AC2 — user must own the booking
-  if (booking.userEmail !== userEmail) {
-    res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." })
-    return
+  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
+    res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
+    return;
   }
 
-  // AC6 — idempotent cancellation
   if (booking.status === "cancelled") {
-    res.json({ message: "This booking is already cancelled." })
-    return
+    res.json({ message: "This booking is already cancelled." });
+    return;
   }
 
-  // AC3 + AC4 — mark cancelled and free slot
-  booking.status = "cancelled"
+  booking.status = "cancelled";
 
-  // AC8 — audit logging
   console.log("BOOKING_CANCELLED", {
-    bookingId,
+    bookingId: bookingIdRaw,
     userEmail,
     timestamp: new Date().toISOString(),
-  })
+  });
 
-  res.json({ message: "Booking cancelled successfully.", booking })
+  res.json({ message: "Booking cancelled successfully.", booking });
 })
 
 app.delete("/__debug/delete-test", (req, res) => {

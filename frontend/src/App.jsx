@@ -6,6 +6,7 @@ import FacilityDetailPage from './routes/FacilityDetailPage'
 import FacilityCalendarPage from './routes/FacilityCalendarPage'
 import BookingConfirmPage from './routes/BookingConfirmPage'
 import BookingResultPage from './routes/BookingResultPage'
+import ViewBookingsPage from './routes/ViewBookingsPage'
 import AuthProvider from './lib/AuthProvider'
 import useAuth from './lib/useAuth'
 
@@ -33,6 +34,7 @@ function AuthedApp() {
       <Route path="/booking/confirm" element={<BookingConfirmPage />} />
       <Route path="/booking/success" element={<BookingResultPage variant="success" />} />
       <Route path="/booking/failure" element={<BookingResultPage variant="failure" />} />
+      <Route path="/bookings" element={<ViewBookingsPage />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
