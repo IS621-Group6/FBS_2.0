@@ -301,8 +301,10 @@ app.get("/api/facilities/:id/availability", (req, res) => {
                   substr(bd.end_time, 12, 5) AS end
            FROM booking_detail bd
            JOIN facilities f ON f.facility_id = bd.facility_id
+           JOIN bookings b ON b.booking_id = bd.booking_id
            WHERE f.facility_code = ?
              AND date(bd.start_time) = date(?)
+             AND (b.status IS NULL OR LOWER(b.status) != 'cancelled')
            ORDER BY bd.start_time ASC`
         )
         .all(req.params.id, date);
@@ -325,7 +327,7 @@ app.get("/api/facilities/:id/availability", (req, res) => {
   }
 
   const reservations = BOOKINGS.filter(
-    (b) => b.facilityId === facility.id && b.date === date
+    (b) => b.facilityId === facility.id && b.date === date && String(b.status || 'active').toLowerCase() !== 'cancelled'
   ).map((b) => ({ id: b.id, start: b.start, end: b.end }));
 
   res.json({ facilityId: facility.id, date, reservations });
@@ -397,10 +399,12 @@ app.get("/api/availability-glimpse", (req, res) => {
 
       const bookings = db
         .prepare(
-          `SELECT facility_id, start_time, end_time, booking_id AS id
-           FROM booking_detail
-           WHERE facility_id IN (${numericIds.map(() => "?").join(",")})
-             AND date(start_time) = date(?)`
+          `SELECT bd.facility_id, bd.start_time, bd.end_time, bd.booking_id AS id
+           FROM booking_detail bd
+           JOIN bookings b ON b.booking_id = bd.booking_id
+           WHERE bd.facility_id IN (${numericIds.map(() => "?").join(",")})
+             AND date(bd.start_time) = date(?)
+             AND (b.status IS NULL OR LOWER(b.status) != 'cancelled')`
         )
         .all(...numericIds, date);
 
@@ -651,7 +655,7 @@ app.post("/api/bookings", (req, res) => {
   }
 
   const existing = BOOKINGS.filter(
-    (b) => b.facilityId === facilityId && b.date === date
+    (b) => b.facilityId === facilityId && b.date === date && String(b.status || 'active').toLowerCase() !== 'cancelled'
   );
   const conflict = existing.find((b) => {
     const bStart = toMinutes(b.start);
@@ -841,17 +845,19 @@ app.put("/api/bookings/:id", (req, res) => {
       const startTs = `${date} ${start}:00`;
       const endTs = `${date} ${end}:00`;
 
-      // Check for conflicts, excluding the current booking
+  // Check for conflicts, excluding the current booking and cancelled bookings
       const conflict = db
         .prepare(
-          `SELECT booking_id AS id,
-                  substr(start_time, 12, 5) AS start,
-                  substr(end_time, 12, 5) AS end
-           FROM booking_detail
-           WHERE facility_id = ?
-             AND booking_id != ?
-             AND start_time < ?
-             AND end_time   > ?
+          `SELECT bd.booking_id AS id,
+                  substr(bd.start_time, 12, 5) AS start,
+                  substr(bd.end_time, 12, 5) AS end
+           FROM booking_detail bd
+           JOIN bookings b ON b.booking_id = bd.booking_id
+           WHERE bd.facility_id = ?
+             AND bd.booking_id != ?
+             AND bd.start_time < ?
+             AND bd.end_time   > ?
+             AND (b.status IS NULL OR LOWER(b.status) != 'cancelled')
            LIMIT 1`
         )
         .get(facilityDbId, bookingIdNumeric, endTs, startTs);
