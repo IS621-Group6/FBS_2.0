@@ -202,7 +202,7 @@ export default function SearchPage() {
   return (
     <AppShell>
       <div className="container">
-        <div className="stack">
+        <div className="stack" style={{ paddingBottom: '200px' }}>
           <BookingProgressBar currentStep={1} onStepClick={null} />
 
           <div>
