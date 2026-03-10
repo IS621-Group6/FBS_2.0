@@ -88,6 +88,15 @@ export default function ViewBookingsPage() {
       return
     }
 
+    // Simple local validation to ensure end time is after start time.
+    const [startHour, startMinute] = String(start).split(':').map(Number)
+    const [endHour, endMinute] = String(end).split(':').map(Number)
+    const startMinutes = startHour * 60 + startMinute
+    const endMinutes = endHour * 60 + endMinute
+    if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
+      setModifyError('End time must be after start time')
+      return
+    }
     const plainId = String(modifyingBooking.id || '').replace(/^B-/, '')
     setIsModifying(true)
     setModifyError('')
