@@ -841,6 +841,11 @@ app.put("/api/bookings/:id", (req, res) => {
         return;
       }
 
+      // Disallow modifications to cancelled bookings (consistent with DELETE endpoint)
+      if (String(bookingRow.status || "").toLowerCase() === "cancelled") {
+        res.status(400).json({ message: "Cannot modify a cancelled booking." });
+        return;
+      }
       const facilityDbId = Number(bookingRow.facility_id);
 
       // Validate time range (start < end), similar to in-memory path
