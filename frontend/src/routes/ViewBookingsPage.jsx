@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppShell from '../components/AppShell'
-import { cancelBooking, getBookings } from '../lib/api'
+import { cancelBooking, getBookings, modifyBooking } from '../lib/api'
 import useAuth from '../lib/useAuth'
 
 function formatStatus(status) {
@@ -20,6 +20,10 @@ export default function ViewBookingsPage() {
   const [isCancellingById, setIsCancellingById] = useState({})
   const [confirmCancel, setConfirmCancel] = useState(null)
   const [cancelSuccess, setCancelSuccess] = useState(null)
+  const [modifyingBooking, setModifyingBooking] = useState(null)
+  const [modifyForm, setModifyForm] = useState({ date: '', start: '', end: '' })
+  const [isModifying, setIsModifying] = useState(false)
+  const [modifyError, setModifyError] = useState('')
 
   const activeCount = useMemo(() => items.filter((item) => formatStatus(item.status) === 'active').length, [items])
 
@@ -57,6 +61,63 @@ export default function ViewBookingsPage() {
       setIsCancellingById((prev) => ({ ...prev, [bookingId]: false }))
     }
   }
+
+  const handleOpenModify = (booking) => {
+    setModifyingBooking(booking)
+    setModifyForm({
+      date: booking.date || '',
+      start: booking.start || '',
+      end: booking.end || '',
+    })
+    setModifyError('')
+  }
+
+  const handleCloseModify = () => {
+    setModifyingBooking(null)
+    setModifyForm({ date: '', start: '', end: '' })
+    setModifyError('')
+    setIsModifying(false)
+  }
+
+  const handleModifyFormChange = (field, value) => {
+    setModifyForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const handleSubmitModify = async (e) => {
+    e.preventDefault()
+    if (!modifyingBooking || !userEmail) return
+
+    const { date, start, end } = modifyForm
+    if (!date || !start || !end) {
+      setModifyError('All fields are required')
+      return
+    }
+
+    // Simple local validation to ensure end time is after start time.
+    const [startHour, startMinute] = String(start).split(':').map(Number)
+    const [endHour, endMinute] = String(end).split(':').map(Number)
+    const startMinutes = startHour * 60 + startMinute
+    const endMinutes = endHour * 60 + endMinute
+    if (!Number.isFinite(startMinutes) || !Number.isFinite(endMinutes) || endMinutes <= startMinutes) {
+      setModifyError('End time must be after start time')
+      return
+    }
+    const plainId = String(modifyingBooking.id || '').replace(/^B-/, '')
+    setIsModifying(true)
+    setModifyError('')
+
+    try {
+      await modifyBooking(plainId, { date, start, end }, userEmail)
+      await loadBookings()
+      handleCloseModify()
+    } catch (e) {
+      setModifyError(e?.message || 'Unable to modify booking')
+    } finally {
+      setIsModifying(false)
+    }
+  }
+
+  const confirmCancelPlainId = confirmCancel ? String(confirmCancel.id || '').replace(/^B-/, '') : ''
 
   return (
     <AppShell>
@@ -140,14 +201,24 @@ export default function ViewBookingsPage() {
                         <button className="btn" type="button" onClick={loadBookings}>
                           Refresh
                         </button>
-                        <button
-                          className="btn btnPrimary"
-                          type="button"
-                          onClick={() => setConfirmCancel(booking)}
-                          disabled={!canCancel || isCancelling}
-                        >
-                          {isCancelling ? 'Cancelling…' : canCancel ? 'Cancel booking' : 'Not cancellable'}
-                        </button>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            className="btn"
+                            type="button"
+                            onClick={() => handleOpenModify(booking)}
+                            disabled={!canCancel}
+                          >
+                            Modify
+                          </button>
+                          <button
+                            className="btn btnPrimary"
+                            type="button"
+                            onClick={() => setConfirmCancel(booking)}
+                            disabled={!canCancel || isCancelling}
+                          >
+                            {isCancelling ? 'Cancelling…' : canCancel ? 'Cancel booking' : 'Not cancellable'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -156,86 +227,185 @@ export default function ViewBookingsPage() {
             </div>
           ) : null}
         </div>
+
+        {modifyingBooking ? (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+            onClick={isModifying ? undefined : handleCloseModify}
+          >
+            <div
+              className="card cardPad"
+              style={{ maxWidth: 500, width: '90%' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <form onSubmit={handleSubmitModify}>
+                <div className="stack">
+                  <div className="h2">Modify Booking</div>
+                  <div className="muted">
+                    {modifyingBooking.facilityName || modifyingBooking.facilityId} - {modifyingBooking.id}
+                  </div>
+
+                  {modifyError ? (
+                    <div className="alert alertDanger">
+                      <div className="muted">{modifyError}</div>
+                    </div>
+                  ) : null}
+
+                  <div className="stack" style={{ gap: 12 }}>
+                    <div>
+                      <label htmlFor="modify-date" className="label">
+                        Date
+                      </label>
+                      <input
+                        id="modify-date"
+                        type="date"
+                        className="input"
+                        value={modifyForm.date}
+                        onChange={(e) => handleModifyFormChange('date', e.target.value)}
+                        required
+                        disabled={isModifying}
+                      />
+                    </div>
+
+                    <div className="grid2">
+                      <div>
+                        <label htmlFor="modify-start" className="label">
+                          Start Time
+                        </label>
+                        <input
+                          id="modify-start"
+                          type="time"
+                          className="input"
+                          value={modifyForm.start}
+                          onChange={(e) => handleModifyFormChange('start', e.target.value)}
+                          required
+                          disabled={isModifying}
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="modify-end" className="label">
+                          End Time
+                        </label>
+                        <input
+                          id="modify-end"
+                          type="time"
+                          className="input"
+                          value={modifyForm.end}
+                          onChange={(e) => handleModifyFormChange('end', e.target.value)}
+                          required
+                          disabled={isModifying}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="row" style={{ justifyContent: 'flex-end', gap: 8 }}>
+                    <button className="btn" type="button" onClick={handleCloseModify} disabled={isModifying}>
+                      Cancel
+                    </button>
+                    <button className="btn btnPrimary" type="submit" disabled={isModifying}>
+                      {isModifying ? 'Saving…' : 'Save Changes'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : null}
+
+        {confirmCancel ? (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+          >
+            <div className="card cardPad" style={{ maxWidth: 400, width: '100%', margin: 'var(--space-6)' }}>
+              <div className="stack" style={{ gap: 16 }}>
+                <div className="h2">Cancel Booking</div>
+                <div>
+                  Are you sure you want to cancel this booking?
+                  <br />
+                  <strong>Booking ID:</strong> {confirmCancel.id}
+                  <br />
+                  <strong>Date:</strong> {confirmCancel.date}
+                  <br />
+                  <strong>Time:</strong> {confirmCancel.start}–{confirmCancel.end}
+                </div>
+                <div className="row" style={{ gap: 12 }}>
+                  <button
+                    className="btn"
+                    onClick={() => setConfirmCancel(null)}
+                    disabled={Boolean(isCancellingById[confirmCancelPlainId])}
+                  >
+                    Keep Booking
+                  </button>
+                  <button
+                    className="btn btnPrimary"
+                    onClick={() => handleCancel(confirmCancel)}
+                    disabled={Boolean(isCancellingById[confirmCancelPlainId])}
+                  >
+                    {isCancellingById[confirmCancelPlainId] ? 'Cancelling…' : 'Cancel Booking'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {cancelSuccess ? (
+          <div
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+          >
+            <div className="card cardPad" style={{ maxWidth: 400, width: '100%', margin: 'var(--space-6)' }}>
+              <div className="stack" style={{ gap: 16 }}>
+                <div className="h2">Booking Cancelled</div>
+                <div>
+                  Confirmed. Your booking was cancelled.
+                  <br />
+                  <strong>Booking ID:</strong> {cancelSuccess}
+                </div>
+                <div className="row">
+                  <button className="btn btnPrimary" onClick={() => setCancelSuccess(null)}>
+                    OK
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
-
-      {confirmCancel ? (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div className="card cardPad" style={{ maxWidth: 400, width: '100%', margin: 'var(--space-6)' }}>
-            <div className="stack" style={{ gap: 16 }}>
-              <div className="h2">Cancel Booking</div>
-              <div>
-                Are you sure you want to cancel this booking?
-                <br />
-                <strong>Booking ID:</strong> {confirmCancel.id}
-                <br />
-                <strong>Date:</strong> {confirmCancel.date}
-                <br />
-                <strong>Time:</strong> {confirmCancel.start}–{confirmCancel.end}
-              </div>
-              <div className="row" style={{ gap: 12 }}>
-                <button
-                  className="btn"
-                  onClick={() => setConfirmCancel(null)}
-                  disabled={!!(confirmCancel && isCancellingById && isCancellingById[confirmCancel.id])}
-                >
-                  Keep Booking
-                </button>
-                <button
-                  className="btn btnPrimary"
-                  onClick={() => handleCancel(confirmCancel)}
-                  disabled={!!(confirmCancel && isCancellingById && isCancellingById[confirmCancel.id])}
-                >
-                  {confirmCancel && isCancellingById && isCancellingById[confirmCancel.id]
-                    ? 'Cancelling…'
-                    : 'Cancel Booking'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {cancelSuccess ? (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div className="card cardPad" style={{ maxWidth: 400, width: '100%', margin: 'var(--space-6)' }}>
-            <div className="stack" style={{ gap: 16 }}>
-              <div className="h2">Booking Cancelled</div>
-              <div>
-                Confirmed. Your booking was cancelled.
-                <br />
-                <strong>Booking ID:</strong> {cancelSuccess}
-              </div>
-              <div className="row">
-                <button className="btn btnPrimary" onClick={() => setCancelSuccess(null)}>
-                  OK
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : null}
     </AppShell>
   )
 }
