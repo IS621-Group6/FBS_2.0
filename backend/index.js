@@ -895,9 +895,8 @@ app.put("/api/bookings/:id", (req, res) => {
   }
 
   const bookingIdString = String(bookingIdRaw);
-  const normalizedBookingId = bookingIdString.startsWith("B-")
-    ? bookingIdString
-    : `B-${bookingIdString}`;
+  const bookingIdCore = bookingIdString.replace(/^B-/i, "");
+  const normalizedBookingId = `B-${bookingIdCore}`;
 
   const booking = BOOKINGS.find(
     (b) => b.id === bookingIdString || b.id === normalizedBookingId
