@@ -872,7 +872,7 @@ app.put("/api/bookings/:id", (req, res) => {
       const startTs = `${date} ${start}:00`;
       const endTs = `${date} ${end}:00`;
 
-  // Check for conflicts, excluding the current booking and cancelled bookings
+      // Check for conflicts, excluding the current booking and cancelled bookings
       const conflict = db
         .prepare(
           `SELECT bd.booking_id AS id,
@@ -950,6 +950,10 @@ app.put("/api/bookings/:id", (req, res) => {
     return;
   }
 
+  if (booking.status === "cancelled") {
+    res.status(400).json({ message: "Cannot modify a cancelled booking." });
+    return;
+  }
   const startMin = toMinutes(start);
   const endMin = toMinutes(end);
   if (startMin === null || endMin === null || endMin <= startMin) {
@@ -959,7 +963,11 @@ app.put("/api/bookings/:id", (req, res) => {
 
   // Check for conflicts with other bookings (excluding this one)
   const existing = BOOKINGS.filter(
-    (b) => b.facilityId === booking.facilityId && b.date === date && b.id !== booking.id
+    (b) =>
+      b.facilityId === booking.facilityId &&
+      b.date === date &&
+      b.id !== booking.id &&
+      String(b.status || "active").toLowerCase() !== "cancelled"
   );
   const conflict = existing.find((b) => {
     const bStart = toMinutes(b.start);

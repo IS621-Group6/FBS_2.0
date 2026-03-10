@@ -62,6 +62,9 @@ export default function AppShell({ children, showSearch = true }) {
           </div>
 
           <div className="navRight">
+            <Link className="btn btnPrimary" to="/booking/new">
+              New Booking
+            </Link>
             <Link className="btn" to="/bookings">
               My bookings
             </Link>

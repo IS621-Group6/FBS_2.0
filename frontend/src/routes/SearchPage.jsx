@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import BookingProgressBar from '../components/BookingProgressBar'
 import FacilityCard from '../components/FacilityCard'
 import Pagination from '../components/Pagination'
 import { getAvailabilityGlimpse, searchFacilities } from '../lib/api'
@@ -176,16 +177,6 @@ export default function SearchPage() {
     setSp(next)
   }
 
-  const clearFilters = () => {
-    const next = new URLSearchParams()
-    if (q) next.set('q', q)
-    next.set('date', isoToday())
-    next.set('start', '10:00')
-    next.set('duration', '60')
-    next.set('page', '1')
-    navigate(`/?${next.toString()}`)
-  }
-
   const goToCalendar = (facilityId) => {
     const next = new URLSearchParams(sp)
     next.delete('page')
@@ -201,15 +192,12 @@ export default function SearchPage() {
   return (
     <AppShell>
       <div className="container">
-        <div className="stack">
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div>
-              <h1 className="h1">Search, filter, and book</h1>
-              <div className="muted2">Search-first booking for thousands of rooms.</div>
-            </div>
-            <button className="btn" onClick={clearFilters}>
-              Reset filters
-            </button>
+        <div className="stack" style={{ paddingBottom: '200px' }}>
+          <BookingProgressBar currentStep={1} onStepClick={null} />
+
+          <div>
+            <h1 className="h1">Search, filter, and book</h1>
+            <div className="muted2">Search-first booking for thousands of rooms.</div>
           </div>
 
           <div className="card cardPad">
