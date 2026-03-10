@@ -25,6 +25,7 @@ export default function BookingProgressBar({ currentStep, onStepClick }) {
         border: '1px solid #e5e7eb',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
         width: 'calc(50% - 32px)',
+        minWidth: '280px',
         maxWidth: '600px',
       }}
     >
