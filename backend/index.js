@@ -844,6 +844,13 @@ app.put("/api/bookings/:id", (req, res) => {
       // Disallow modifications to cancelled bookings (consistent with DELETE endpoint)
       if (String(bookingRow.status || "").toLowerCase() === "cancelled") {
         res.status(400).json({ message: "Cannot modify a cancelled booking." });
+      // Allow modification for non-cancelled bookings (e.g. CONFIRMED/ACTIVE)
+      const bookingStatus = String(bookingRow.status || "").toLowerCase();
+      if (bookingStatus === "cancelled") {
+        res.status(409).json({
+          error: "NOT_MODIFIABLE",
+          message: "This booking can no longer be modified.",
+        });
         return;
       }
       const facilityDbId = Number(bookingRow.facility_id);
@@ -880,6 +887,21 @@ app.put("/api/bookings/:id", (req, res) => {
 
       if (endTotalMin <= startTotalMin) {
         res.status(400).json({ message: "End time must be after start time." });
+      // Validate time range (HH:MM) and ensure end > start
+      const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+      if (!timePattern.test(start) || !timePattern.test(end)) {
+        res.status(400).json({ message: "Invalid time format. Expected HH:MM for start and end." });
+        return;
+      }
+
+      const [startHour, startMinute] = start.split(":").map(Number);
+      const [endHour, endMinute] = end.split(":").map(Number);
+      const startTotalMinutes = startHour * 60 + startMinute;
+      const endTotalMinutes = endHour * 60 + endMinute;
+
+      if (endTotalMinutes <= startTotalMinutes) {
+        res.status(400).json({ message: "Invalid time range. The end time must be after the start time." });
         return;
       }
       const startTs = `${date} ${start}:00`;
@@ -981,6 +1003,7 @@ app.put("/api/bookings/:id", (req, res) => {
       b.date === date &&
       b.id !== booking.id &&
       String(b.status || "active").toLowerCase() !== "cancelled"
+    (b) => b.facilityId === booking.facilityId && b.date === date && b.id !== booking.id
   );
   const conflict = existing.find((b) => {
     const bStart = toMinutes(b.start);
