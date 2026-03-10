@@ -963,6 +963,10 @@ app.put("/api/bookings/:id", (req, res) => {
     return;
   }
 
+  if (booking.status === "cancelled") {
+    res.status(400).json({ message: "Cannot modify a cancelled booking." });
+    return;
+  }
   const startMin = toMinutes(start);
   const endMin = toMinutes(end);
   if (startMin === null || endMin === null || endMin <= startMin) {
