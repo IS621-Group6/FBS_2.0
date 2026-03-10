@@ -845,7 +845,7 @@ app.put("/api/bookings/:id", (req, res) => {
       const startTs = `${date} ${start}:00`;
       const endTs = `${date} ${end}:00`;
 
-  // Check for conflicts, excluding the current booking and cancelled bookings
+      // Check for conflicts, excluding the current booking and cancelled bookings
       const conflict = db
         .prepare(
           `SELECT bd.booking_id AS id,
