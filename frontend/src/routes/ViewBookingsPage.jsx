@@ -184,11 +184,21 @@ export default function ViewBookingsPage() {
                 <strong>Time:</strong> {confirmCancel.start}–{confirmCancel.end}
               </div>
               <div className="row" style={{ gap: 12 }}>
-                <button className="btn" onClick={() => setConfirmCancel(null)}>
+                <button
+                  className="btn"
+                  onClick={() => setConfirmCancel(null)}
+                  disabled={!!(confirmCancel && isCancellingById && isCancellingById[confirmCancel.id])}
+                >
                   Keep Booking
                 </button>
-                <button className="btn btnPrimary" onClick={() => handleCancel(confirmCancel)}>
-                  Cancel Booking
+                <button
+                  className="btn btnPrimary"
+                  onClick={() => handleCancel(confirmCancel)}
+                  disabled={!!(confirmCancel && isCancellingById && isCancellingById[confirmCancel.id])}
+                >
+                  {confirmCancel && isCancellingById && isCancellingById[confirmCancel.id]
+                    ? 'Cancelling…'
+                    : 'Cancel Booking'}
                 </button>
               </div>
             </div>
