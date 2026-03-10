@@ -944,7 +944,6 @@ app.put("/api/bookings/:id", (req, res) => {
   res.json({
     id: booking.id,
     facilityId: booking.facilityId,
-    facilityName: booking.facilityName,
     date: booking.date,
     start: booking.start,
     end: booking.end,
