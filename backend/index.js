@@ -842,6 +842,41 @@ app.put("/api/bookings/:id", (req, res) => {
       }
 
       const facilityDbId = Number(bookingRow.facility_id);
+
+      // Validate time range (start < end), similar to in-memory path
+      const [startHourStr, startMinuteStr] = String(start).split(":");
+      const [endHourStr, endMinuteStr] = String(end).split(":");
+      const startHour = Number(startHourStr);
+      const startMinute = Number(startMinuteStr);
+      const endHour = Number(endHourStr);
+      const endMinute = Number(endMinuteStr);
+
+      const validParts =
+        Number.isInteger(startHour) &&
+        Number.isInteger(startMinute) &&
+        Number.isInteger(endHour) &&
+        Number.isInteger(endMinute) &&
+        startHour >= 0 &&
+        startHour <= 23 &&
+        endHour >= 0 &&
+        endHour <= 23 &&
+        startMinute >= 0 &&
+        startMinute <= 59 &&
+        endMinute >= 0 &&
+        endMinute <= 59;
+
+      if (!validParts) {
+        res.status(400).json({ message: "Invalid time format." });
+        return;
+      }
+
+      const startTotalMin = startHour * 60 + startMinute;
+      const endTotalMin = endHour * 60 + endMinute;
+
+      if (endTotalMin <= startTotalMin) {
+        res.status(400).json({ message: "End time must be after start time." });
+        return;
+      }
       const startTs = `${date} ${start}:00`;
       const endTs = `${date} ${end}:00`;
 
