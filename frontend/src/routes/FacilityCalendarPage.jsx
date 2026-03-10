@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
+import BookingProgressBar from '../components/BookingProgressBar'
 import CalendarGrid from '../components/CalendarGrid'
 import { getAvailability, getFacility } from '../lib/api'
 import { isoToday, overlaps, parseTimeToMinutes } from '../lib/time'
@@ -87,6 +88,12 @@ export default function FacilityCalendarPage() {
   }, [id, date])
 
   const proceed = () => {
+    // prevent past-date navigation, double-check even though backend also validates
+    if (date < isoToday()) {
+      alert("You can't book a past date/time. Please choose a future slot.")
+      return
+    }
+
     const confirmSp = new URLSearchParams()
     confirmSp.set('facilityId', id)
     confirmSp.set('date', date)
@@ -96,27 +103,34 @@ export default function FacilityCalendarPage() {
     navigate(`/booking/confirm?${confirmSp.toString()}`)
   }
 
+  const handleProgressBarClick = (stepNumber) => {
+    if (stepNumber === 1) {
+      navigate(searchContext ? `/search?${searchContext}` : '/search')
+    }
+  }
+
   return (
     <AppShell>
-      <div className="container">
+      <div className="container" style={{ paddingBottom: '200px' }}>
         <div className="stack">
-          <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div>
-              <h1 className="h1">Availability</h1>
-              <div className="muted">
-                {facility ? (
-                  <>
-                    {facility.name} • {facility.campus}
-                  </>
-                ) : (
-                  'Loading facility…'
-                )}
-              </div>
+          <BookingProgressBar currentStep={2} onStepClick={handleProgressBarClick} />
+
+          <div>
+            <h1 className="h1">Availability</h1>
+            <div className="muted">
+              {facility ? (
+                <>
+                  {facility.name} • {facility.campus}
+                </>
+              ) : (
+                'Loading facility…'
+              )}
             </div>
-            <Link className="btn" to={searchContext ? `/search?${searchContext}` : '/search'}>
-              Back to results
-            </Link>
           </div>
+
+          <Link className="btn" to={searchContext ? `/search?${searchContext}` : '/search'} style={{ alignSelf: 'flex-start' }}>
+            ← Back to results
+          </Link>
 
           <div className="gridSidebar">
             <aside className="card cardPad">
@@ -125,7 +139,22 @@ export default function FacilityCalendarPage() {
 
                 <div className="field">
                   <div className="label">Date</div>
-                  <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                  <input className="input" type="date" value={date} min={isoToday()} onChange={(e) => {
+                    const selected = e.target.value
+                    if (selected < isoToday()) {
+                      alert("You can't book a past date/time. Please choose a future slot.")
+                      return
+                    }
+                    setDate(selected)}
+                  }
+                  />
+                  {date < isoToday() && (
+                    <div className="alert alertDanger">
+                      <div style={{ color: 'var(--danger)', fontSize: 14 }}>
+                        ⚠️ You can’t choose a past date.
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="field">
@@ -154,7 +183,11 @@ export default function FacilityCalendarPage() {
                   </div>
                 )}
 
-                <button className="btn btnPrimary" onClick={proceed} disabled={!selectedStart || !end || isLoading || hasOverlap}>
+                <button
+                  className="btn btnPrimary"
+                  onClick={proceed}
+                  disabled={!selectedStart || !end || isLoading || hasOverlap || date < isoToday()}
+                >
                   Continue to confirmation
                 </button>
 

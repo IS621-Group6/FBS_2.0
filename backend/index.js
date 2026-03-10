@@ -3,6 +3,13 @@ const cors = require("cors");
 const { getDb, sqliteHealth } = require("./sqlite");
 const rateLimit = require("express-rate-limit");
 
+// helpers for real-time cost/credit snapshots
+const { deductCredits, getCostCentre } = require("./finance");
+const { formatBookingConfirmation } = require("./emailTemplates");
+
+const compression = require("compression");
+const NodeCache = require("node-cache");
+
 const app = express();
 const globalLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
@@ -32,6 +39,21 @@ const searchLimiter = rateLimit({
   message: {
     error: "Too many search requests. Please slow down."
   }
+});
+
+const searchCache = new NodeCache({ stdTTL: 60 });
+
+app.use(compression());
+
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.originalUrl} ${duration}ms`);
+  });
+
+  next();
 });
 
 app.use(cors());
@@ -154,6 +176,13 @@ app.get("/api/health", (req, res) => {
 });
 
 app.get("/api/facilities", searchLimiter, async (req, res) => {
+  const cacheKey = JSON.stringify(req.query);
+
+  const cachedResult = searchCache.get(cacheKey);
+
+  if (cachedResult) {
+    return res.json(cachedResult);
+  }
   const q = String(req.query.q || "").trim().toLowerCase();
   const minCapacity = Number(req.query.minCapacity || 0) || 0;
   const equipment = String(req.query.equipment || "")
@@ -218,6 +247,8 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
       const safePage = Math.min(page, pageCount);
       const startIdx = (safePage - 1) * pageSize;
       const slice = items.slice(startIdx, startIdx + pageSize);
+
+      searchCache.set(cacheKey, { items: slice, total, page: safePage, pageSize, pageCount });
 
       res.json({ items: slice, total, page: safePage, pageSize, pageCount });
       return;
@@ -480,8 +511,73 @@ app.get("/api/availability-glimpse", (req, res) => {
   res.json({ date, duration, items });
 });
 
+app.get("/api/bookings", (req, res) => {
+  const userEmail = String(req.query.userEmail || req.headers["x-user-email"] || "").trim();
+
+  const db = getDb();
+  if (db) {
+    try {
+      const rows = db
+        .prepare(
+          `SELECT b.booking_id,
+                  b.status,
+                  b.booking_reason,
+                  u.email AS user_email,
+                  f.facility_code,
+                  f.facility_name,
+                  substr(bd.start_time, 1, 10) AS booking_date,
+                  substr(bd.start_time, 12, 5) AS start_time,
+                  substr(bd.end_time, 12, 5) AS end_time
+           FROM bookings b
+           JOIN users u ON u.user_id = b.user_id
+           JOIN booking_detail bd ON bd.booking_id = b.booking_id
+           JOIN facilities f ON f.facility_id = bd.facility_id
+           WHERE (? = '' OR lower(u.email) = lower(?))
+           ORDER BY bd.start_time DESC, b.booking_id DESC`
+        )
+        .all(userEmail, userEmail);
+
+      const items = rows.map((row) => ({
+        id: `B-${row.booking_id}`,
+        facilityId: row.facility_code,
+        facilityName: row.facility_name,
+        date: row.booking_date,
+        start: row.start_time,
+        end: row.end_time,
+        userEmail: row.user_email,
+        reason: row.booking_reason || undefined,
+        status: String(row.status || "CONFIRMED").toLowerCase(),
+      }));
+
+      res.json({ items });
+      return;
+    } catch (e) {
+      res.status(500).json({ message: e?.message || "Failed to load bookings" });
+      return;
+    }
+  }
+
+  const items = BOOKINGS
+    .filter((booking) => !userEmail || String(booking.userEmail).toLowerCase() === userEmail.toLowerCase())
+    .map((booking) => ({
+      id: booking.id,
+      facilityId: booking.facilityId,
+      date: booking.date,
+      start: booking.start,
+      end: booking.end,
+      userEmail: booking.userEmail,
+      reason: booking.reason,
+      status: booking.status || "active",
+    }))
+    .sort((a, b) => `${b.date} ${b.start}`.localeCompare(`${a.date} ${a.start}`));
+
+  res.json({ items });
+});
+
 app.post("/api/bookings", (req, res) => {
   const { facilityId, date, start, end, userEmail, reason } = req.body || {};
+  // role may come from a header or the body; default to student for sanity
+  const userRole = String(req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
 
   if (!facilityId || !date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
@@ -529,7 +625,7 @@ app.post("/api/bookings", (req, res) => {
         return;
       }
 
-      const email = String(userEmail || "guest@smu.edu.sg").trim();
+      const email = String(userEmail || "guest@smu.edu.sg").trim().toLowerCase();
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
 
       const tx = db.transaction(() => {
@@ -561,6 +657,18 @@ app.post("/api/bookings", (req, res) => {
       });
 
       const bookingId = tx();
+      // compute role‑aware financial snapshot
+      let extra = {};
+      if (userRole === "student") {
+        // for demo every booking costs 100 credits
+        const { deducted, remaining } = deductCredits(email, 100);
+        extra = { deducted, creditsRemaining: remaining };
+      } else if (userRole === "staff") {
+        extra.costCentre = getCostCentre(email);
+      }
+      const emailBody = formatBookingConfirmation(userRole, extra);
+      console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole });
+
       res.status(201).json({
         id: `B-${bookingId}`,
         facilityId,
@@ -569,6 +677,7 @@ app.post("/api/bookings", (req, res) => {
         end,
         userEmail: email,
         reason: reasonTrimmed || undefined,
+        ...extra,
       });
       return;
     } catch (e) {
@@ -608,24 +717,152 @@ app.post("/api/bookings", (req, res) => {
     return;
   }
 
+  const email = String(userEmail || "unknown@smu.edu.sg").trim().toLowerCase();
+
   const booking = {
     id: nextBookingId(),
     facilityId,
     date,
     start,
     end,
-    userEmail: userEmail || "unknown@smu.edu.sg",
+    userEmail: email,
+    status: "active",
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
   };
 
   BOOKINGS.push(booking);
-  res.status(201).json(booking);
+  // compute extras for in-memory case
+  let extra = {};
+  if (userRole === "student") {
+    const { deducted, remaining } = deductCredits(email, 100);
+    extra = { deducted, creditsRemaining: remaining };
+  } else if (userRole === "staff") {
+    extra.costCentre = getCostCentre(email);
+  }
+  const emailBody = formatBookingConfirmation(userRole, extra);
+  console.log("SEND_EMAIL", { bookingId: booking.id, userRole });
+
+  res.status(201).json({ ...booking, ...extra });
 });
+
+app.delete("/api/bookings/:id", (req, res) => {
+  const bookingIdRaw = String(req.params.id || "").trim();
+  const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
+  const userEmail = String(req.headers["x-user-email"] || "").trim();
+
+  if (!userEmail) {
+    res.status(401).json({ message: "Please log in to cancel bookings." });
+    return;
+  }
+
+  const db = getDb();
+  if (db) {
+    try {
+      if (!Number.isFinite(bookingIdNumeric) || bookingIdNumeric <= 0) {
+        res.status(400).json({ message: "Invalid booking id." });
+        return;
+      }
+
+      const bookingRow = db
+        .prepare(
+          `SELECT b.booking_id,
+                  b.status,
+                  u.email AS user_email
+           FROM bookings b
+           JOIN users u ON u.user_id = b.user_id
+           WHERE b.booking_id = ?`
+        )
+        .get(bookingIdNumeric);
+
+      if (!bookingRow) {
+        res.status(404).json({ message: "Booking not found." });
+        return;
+      }
+
+      if (String(bookingRow.user_email).toLowerCase() !== userEmail.toLowerCase()) {
+        res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
+        return;
+      }
+
+      if (String(bookingRow.status || "").toLowerCase() === "cancelled") {
+        res.json({ message: "This booking is already cancelled." });
+        return;
+      }
+
+      db.prepare(`UPDATE bookings SET status = 'cancelled' WHERE booking_id = ?`).run(bookingIdNumeric);
+
+      console.log("BOOKING_CANCELLED", {
+        bookingId: `B-${bookingIdNumeric}`,
+        userEmail,
+        timestamp: new Date().toISOString(),
+      });
+
+      res.json({
+        message: "Booking cancelled successfully.",
+        booking: {
+          id: `B-${bookingIdNumeric}`,
+          userEmail,
+          status: "cancelled",
+        },
+      });
+      return;
+    } catch (e) {
+      res.status(500).json({ message: e?.message || "Cancellation failed." });
+      return;
+    }
+  }
+
+  const bookingIdString = String(bookingIdRaw);
+  const normalizedBookingId = bookingIdString.startsWith("B-")
+    ? bookingIdString
+    : `B-${bookingIdString}`;
+
+  const bookingIndex = BOOKINGS.findIndex(
+    (b) => b.id === bookingIdString || b.id === normalizedBookingId
+  );
+  if (bookingIndex === -1) {
+    res.status(404).json({ message: "Booking not found." });
+    return;
+  }
+
+  const booking = BOOKINGS[bookingIndex];
+
+  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
+    res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
+    return;
+  }
+
+  if (booking.status === "cancelled") {
+    res.json({ message: "This booking is already cancelled." });
+    return;
+  }
+
+  booking.status = "cancelled";
+
+  console.log("BOOKING_CANCELLED", {
+    bookingId: bookingIdRaw,
+    userEmail,
+    timestamp: new Date().toISOString(),
+  });
+
+  res.json({ message: "Booking cancelled successfully.", booking });
+})
+
+app.delete("/__debug/delete-test", (req, res) => {
+  res.json({ ok: true, method: "DELETE" })
+})
 
 app.get("/", (req, res) => {
   res.send("FBS 2.0 backend running");
 });
 
-app.listen(3001, () => {
-  console.log("Backend running on port 3001");
-});
+app.get("/__debug/routes", (req, res) => res.json({ ok: true }));
+
+if (require.main === module) {
+  app.listen(3001, () => {
+    console.log("Backend running on port 3001");
+  });
+} else {
+  // when the file is required (e.g. from tests) we just export the app
+  module.exports = app;
+}

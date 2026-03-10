@@ -76,4 +76,4 @@ Go to your browser and open:
 
 ```
 http://localhost:5173
-```
+```Development environment setup verified.

@@ -1,7 +1,10 @@
-async function request(path, { method = 'GET', body } = {}) {
+async function request(path, { method = 'GET', body, headers } = {}) {
   const res = await fetch(path, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+   headers: {
+  ...(body ? { 'Content-Type': 'application/json' } : {}),
+  ...(headers || {}),
+},
     body: body ? JSON.stringify(body) : undefined,
   })
 
@@ -55,6 +58,10 @@ export function createBooking(payload) {
   return request('/api/bookings', { method: 'POST', body: payload })
 }
 
+export function getBookings(userEmail) {
+  const headers = userEmail ? { 'x-user-email': userEmail } : undefined
+  return request('/api/bookings', { headers })
+}
 export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }) {
   const sp = new URLSearchParams()
   if (ids?.length) sp.set('ids', ids.join(','))
@@ -63,4 +70,19 @@ export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }
   if (duration) sp.set('duration', String(duration))
   if (limit) sp.set('limit', String(limit))
   return request(`/api/availability-glimpse?${sp.toString()}`)
+}
+
+export function cancelBooking(id, userEmail) {
+  return request(`/api/bookings/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    headers: { 'x-user-email': userEmail },
+  })
+}
+
+export function modifyBooking(id, payload, userEmail) {
+  return request(`/api/bookings/${encodeURIComponent(id)}`, {
+    method: 'PUT',
+    body: payload,
+    headers: { 'x-user-email': userEmail },
+  })
 }
