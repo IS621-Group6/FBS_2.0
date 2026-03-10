@@ -51,7 +51,28 @@ export default function BookingPage() {
 
   // Load facilities on mount
   useEffect(() => {
-    handleSearch()
+    let ignore = false
+
+    setIsSearching(true)
+    setError('')
+    searchFacilities({ q: '' })
+      .then((results) => {
+        if (ignore) return
+        setFacilities(results?.items || [])
+      })
+      .catch((e) => {
+        if (ignore) return
+        setError(e?.message || 'Search failed')
+        setFacilities([])
+      })
+      .finally(() => {
+        if (ignore) return
+        setIsSearching(false)
+      })
+
+    return () => {
+      ignore = true
+    }
   }, [])
 
   // Load facility details when selected

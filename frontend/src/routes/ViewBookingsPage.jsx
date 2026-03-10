@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import { cancelBooking, getBookings, modifyBooking } from '../lib/api'
@@ -27,7 +27,7 @@ export default function ViewBookingsPage() {
 
   const activeCount = useMemo(() => items.filter((item) => formatStatus(item.status) === 'active').length, [items])
 
-  const loadBookings = async () => {
+  const loadBookings = useCallback(async () => {
     if (!userEmail) return
     setIsLoading(true)
     setError('')
@@ -40,11 +40,11 @@ export default function ViewBookingsPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [userEmail])
 
   useEffect(() => {
     loadBookings()
-  }, [userEmail])
+  }, [loadBookings])
 
   const handleCancel = async (booking) => {
     if (!booking || !userEmail) return
@@ -213,7 +213,6 @@ export default function ViewBookingsPage() {
                           <button
                             className="btn btnPrimary"
                             type="button"
-                            onClick={() => handleCancel(plainId)}
                             onClick={() => setConfirmCancel(booking)}
                             disabled={!canCancel || isCancelling}
                           >
@@ -243,7 +242,6 @@ export default function ViewBookingsPage() {
               justifyContent: 'center',
               zIndex: 1000,
             }}
-            onClick={handleCloseModify}
             onClick={isModifying ? undefined : handleCloseModify}
           >
             <div

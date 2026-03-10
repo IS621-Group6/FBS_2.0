@@ -177,16 +177,6 @@ export default function SearchPage() {
     setSp(next)
   }
 
-  const clearFilters = () => {
-    const next = new URLSearchParams()
-    if (q) next.set('q', q)
-    next.set('date', isoToday())
-    next.set('start', '10:00')
-    next.set('duration', '60')
-    next.set('page', '1')
-    navigate(`/?${next.toString()}`)
-  }
-
   const goToCalendar = (facilityId) => {
     const next = new URLSearchParams(sp)
     next.delete('page')
