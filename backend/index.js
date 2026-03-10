@@ -854,29 +854,28 @@ app.put("/api/bookings/:id", (req, res) => {
       // UNIQUE/PK conflicts when a booking has multiple segments for the same
       // facility. Use a small transaction that replaces existing rows for this
       // booking and facility with a single new row covering the requested time.
-      try {
-        db.exec("BEGIN");
+      // Use db.transaction(...) here for consistent and automatic rollback behavior.
+      const replaceBookingSegments = db.transaction(
+        (bookingId, facilityId, startTime, endTime) => {
+          db.prepare(
+            `DELETE FROM booking_detail
+               WHERE booking_id = ?
+                 AND facility_id = ?`
+          ).run(bookingId, facilityId);
 
-        db.prepare(
-          `DELETE FROM booking_detail
-             WHERE booking_id = ?
-               AND facility_id = ?`
-        ).run(bookingIdNumeric, bookingRow.facility_db_id);
-
-        db.prepare(
-          `INSERT INTO booking_detail (booking_id, facility_id, start_time, end_time)
-             VALUES (?, ?, ?, ?)`
-        ).run(bookingIdNumeric, bookingRow.facility_db_id, startTs, endTs);
-
-        db.exec("COMMIT");
-      } catch (txErr) {
-        try {
-          db.exec("ROLLBACK");
-        } catch (_) {
-          // ignore rollback errors
+          db.prepare(
+            `INSERT INTO booking_detail (booking_id, facility_id, start_time, end_time)
+               VALUES (?, ?, ?, ?)`
+          ).run(bookingId, facilityId, startTime, endTime);
         }
-        throw txErr;
-      }
+      );
+
+      replaceBookingSegments(
+        bookingIdNumeric,
+        bookingRow.facility_db_id,
+        startTs,
+        endTs
+      );
       res.json({
         id: `B-${bookingIdNumeric}`,
         facilityId: bookingRow.facility_code,
