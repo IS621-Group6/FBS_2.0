@@ -972,7 +972,11 @@ app.put("/api/bookings/:id", (req, res) => {
 
   // Check for conflicts with other bookings (excluding this one)
   const existing = BOOKINGS.filter(
-    (b) => b.facilityId === booking.facilityId && b.date === date && b.id !== booking.id
+    (b) =>
+      b.facilityId === booking.facilityId &&
+      b.date === date &&
+      b.id !== booking.id &&
+      String(b.status || "active").toLowerCase() !== "cancelled"
   );
   const conflict = existing.find((b) => {
     const bStart = toMinutes(b.start);
