@@ -68,7 +68,7 @@ app.use(express.json());
 // Apply global rate limiter to all routes except GET /api/facilities,
 // which has its own dedicated search limiter.
 function globalLimiterUnlessSearch(req, res, next) {
-  if (req.method === "GET" && req.path && req.path.startsWith("/api/facilities")) {
+  if (req.method === "GET" && req.path === "/api/facilities") {
     return next();
   }
   return globalLimiter(req, res, next);
