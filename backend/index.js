@@ -36,8 +36,14 @@ const searchLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 
-  message: {
-    error: "Too many search requests. Please slow down."
+  handler: (req, res) => {
+    console.warn(
+      `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
+    );
+
+    res.status(429).json({
+      error: "Too many search requests. Please slow down."
+    });
   }
 });
 
