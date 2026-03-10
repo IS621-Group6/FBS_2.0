@@ -64,8 +64,17 @@ app.use((req, res, next) => {
 
 app.use(cors());
 app.use(express.json());
-app.use(globalLimiter);
 
+// Apply global rate limiter to all routes except GET /api/facilities,
+// which has its own dedicated search limiter.
+function globalLimiterUnlessSearch(req, res, next) {
+  if (req.method === "GET" && req.path && req.path.startsWith("/api/facilities")) {
+    return next();
+  }
+  return globalLimiter(req, res, next);
+}
+
+app.use(globalLimiterUnlessSearch);
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
