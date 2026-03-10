@@ -214,7 +214,6 @@ export default function ViewBookingsPage() {
                             className="btn btnPrimary"
                             type="button"
                             onClick={() => setConfirmCancel(booking)}
-                            onClick={() => handleCancel(plainId)}
                             disabled={!canCancel || isCancelling}
                           >
                             {isCancelling ? 'Cancelling…' : canCancel ? 'Cancel booking' : 'Not cancellable'}
