@@ -760,6 +760,198 @@ app.post("/api/bookings", (req, res) => {
   res.status(201).json({ ...booking, ...extra });
 });
 
+app.put("/api/bookings/:id", (req, res) => {
+  const bookingIdRaw = String(req.params.id || "").trim();
+  const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
+  const userEmail = String(req.headers["x-user-email"] || "").trim();
+  const { date, start, end } = req.body || {};
+
+  if (!userEmail) {
+    res.status(401).json({ message: "Please log in to modify bookings." });
+    return;
+  }
+
+  if (!date || !start || !end) {
+    res.status(400).json({ message: "Missing required booking fields" });
+    return;
+  }
+
+  const startMin = toMinutes(start);
+  const endMin = toMinutes(end);
+  if (startMin === null || endMin === null || endMin <= startMin) {
+    res.status(400).json({ message: "Invalid time range" });
+    return;
+  }
+
+  const db = getDb();
+  if (db) {
+    try {
+      if (!Number.isFinite(bookingIdNumeric) || bookingIdNumeric <= 0) {
+        res.status(400).json({ message: "Invalid booking id." });
+        return;
+      }
+
+      const bookingRow = db
+        .prepare(
+          `SELECT b.booking_id,
+                  b.status,
+                  u.email AS user_email,
+                  f.facility_code,
+                  f.facility_name,
+                  bd.facility_id AS facility_db_id
+           FROM bookings b
+           JOIN users u ON u.user_id = b.user_id
+           JOIN booking_detail bd ON bd.booking_id = b.booking_id
+           JOIN facilities f ON f.facility_id = bd.facility_id
+           WHERE b.booking_id = ?`
+        )
+        .get(bookingIdNumeric);
+
+      if (!bookingRow) {
+        res.status(404).json({ message: "Booking not found." });
+        return;
+      }
+
+      if (String(bookingRow.user_email).toLowerCase() !== userEmail.toLowerCase()) {
+        res.status(403).json({ message: "Unauthorised: cannot modify another user's booking." });
+        return;
+      }
+
+      if (String(bookingRow.status || "").toLowerCase() === "cancelled") {
+        res.status(400).json({ message: "Cancelled bookings cannot be modified." });
+        return;
+      }
+
+      const startTs = `${date} ${start}:00`;
+      const endTs = `${date} ${end}:00`;
+
+      const conflict = db
+        .prepare(
+          `SELECT bd.booking_id AS id,
+                  substr(bd.start_time, 12, 5) AS start,
+                  substr(bd.end_time, 12, 5) AS end
+           FROM booking_detail bd
+           JOIN bookings b ON b.booking_id = bd.booking_id
+           WHERE bd.facility_id = ?
+             AND bd.booking_id <> ?
+             AND lower(ifnull(b.status, 'confirmed')) <> 'cancelled'
+             AND bd.start_time < ?
+             AND bd.end_time   > ?
+           LIMIT 1`
+        )
+        .get(Number(bookingRow.facility_db_id), bookingIdNumeric, endTs, startTs);
+
+      if (conflict) {
+        res.status(409).json({
+          error: "DOUBLE_BOOKING",
+          message: "This timeslot is already booked.",
+          conflict: { id: conflict.id, start: conflict.start, end: conflict.end },
+        });
+        return;
+      }
+
+      // In SQLite, updating booking_detail rows by booking_id alone can cause
+      // UNIQUE/PK conflicts when a booking has multiple segments for the same
+      // facility. Use a small transaction that replaces existing rows for this
+      // booking and facility with a single new row covering the requested time.
+      // Use db.transaction(...) here for consistent and automatic rollback behavior.
+      const replaceBookingSegments = db.transaction(
+        (bookingId, facilityId, startTime, endTime) => {
+          db.prepare(
+            `DELETE FROM booking_detail
+               WHERE booking_id = ?
+                 AND facility_id = ?`
+          ).run(bookingId, facilityId);
+
+          db.prepare(
+            `INSERT INTO booking_detail (booking_id, facility_id, start_time, end_time)
+               VALUES (?, ?, ?, ?)`
+          ).run(bookingId, facilityId, startTime, endTime);
+        }
+      );
+
+      replaceBookingSegments(
+        bookingIdNumeric,
+        bookingRow.facility_db_id,
+        startTs,
+        endTs
+      );
+      res.json({
+        id: `B-${bookingIdNumeric}`,
+        facilityId: bookingRow.facility_code,
+        facilityName: bookingRow.facility_name,
+        date,
+        start,
+        end,
+        userEmail: bookingRow.user_email,
+        status: String(bookingRow.status || "confirmed").toLowerCase(),
+      });
+      return;
+    } catch (e) {
+      res.status(500).json({ message: e?.message || "Unable to modify booking." });
+      return;
+    }
+  }
+
+  const bookingIdString = String(bookingIdRaw);
+  const bookingIdCore = bookingIdString.replace(/^B-/i, "");
+  const normalizedBookingId = `B-${bookingIdCore}`;
+
+  const booking = BOOKINGS.find(
+    (b) => b.id === bookingIdString || b.id === normalizedBookingId
+  );
+
+  if (!booking) {
+    res.status(404).json({ message: "Booking not found." });
+    return;
+  }
+
+  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
+    res.status(403).json({ message: "Unauthorised: cannot modify another user's booking." });
+    return;
+  }
+
+  if (String(booking.status || "").toLowerCase() === "cancelled") {
+    res.status(400).json({ message: "Cancelled bookings cannot be modified." });
+    return;
+  }
+
+  const conflict = BOOKINGS.find((b) => {
+    if (b.id === booking.id) return false;
+    if (String(b.status || "active").toLowerCase() === "cancelled") return false;
+    if (b.facilityId !== booking.facilityId) return false;
+    if (b.date !== date) return false;
+
+    const bStart = toMinutes(b.start);
+    const bEnd = toMinutes(b.end);
+    return overlaps(startMin, endMin, bStart, bEnd);
+  });
+
+  if (conflict) {
+    res.status(409).json({
+      error: "DOUBLE_BOOKING",
+      message: "This timeslot is already booked.",
+      conflict: { id: conflict.id, start: conflict.start, end: conflict.end },
+    });
+    return;
+  }
+
+  booking.date = date;
+  booking.start = start;
+  booking.end = end;
+
+  res.json({
+    id: booking.id,
+    facilityId: booking.facilityId,
+    date: booking.date,
+    start: booking.start,
+    end: booking.end,
+    userEmail: booking.userEmail,
+    status: booking.status || "active",
+    reason: booking.reason,
+  });
+});
+
 app.delete("/api/bookings/:id", (req, res) => {
   const bookingIdRaw = String(req.params.id || "").trim();
   const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
