@@ -71,7 +71,7 @@ export default function BookingProgressBar({ currentStep, onStepClick }) {
                 y1="50%"
                 x2="100%"
                 y2="50%"
-                stroke={currentStep === 1 ? '#d1d5db' : '#1f2937'}
+                stroke="#1f2937"
                 strokeWidth="3"
               />
             </svg>
