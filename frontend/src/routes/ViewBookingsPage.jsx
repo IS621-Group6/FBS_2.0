@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import AppShell from '../components/AppShell'
-import { cancelBooking, getBookings, modifyBooking } from '../lib/api'
+import { cancelBooking, getBookings } from '../lib/api'
 import useAuth from '../lib/useAuth'
 
 function formatStatus(status) {
