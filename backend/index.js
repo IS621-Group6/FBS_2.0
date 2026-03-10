@@ -850,8 +850,33 @@ app.put("/api/bookings/:id", (req, res) => {
         return;
       }
 
-      db.prepare(`UPDATE booking_detail SET start_time = ?, end_time = ? WHERE booking_id = ?`).run(startTs, endTs, bookingIdNumeric);
+      // In SQLite, updating booking_detail rows by booking_id alone can cause
+      // UNIQUE/PK conflicts when a booking has multiple segments for the same
+      // facility. Use a small transaction that replaces existing rows for this
+      // booking and facility with a single new row covering the requested time.
+      try {
+        db.exec("BEGIN");
 
+        db.prepare(
+          `DELETE FROM booking_detail
+             WHERE booking_id = ?
+               AND facility_id = ?`
+        ).run(bookingIdNumeric, bookingRow.facility_db_id);
+
+        db.prepare(
+          `INSERT INTO booking_detail (booking_id, facility_id, start_time, end_time)
+             VALUES (?, ?, ?, ?)`
+        ).run(bookingIdNumeric, bookingRow.facility_db_id, startTs, endTs);
+
+        db.exec("COMMIT");
+      } catch (txErr) {
+        try {
+          db.exec("ROLLBACK");
+        } catch (_) {
+          // ignore rollback errors
+        }
+        throw txErr;
+      }
       res.json({
         id: `B-${bookingIdNumeric}`,
         facilityId: bookingRow.facility_code,
