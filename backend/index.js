@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const { getDb, sqliteHealth } = require("./sqlite");
+const rateLimit = require("express-rate-limit");
 
 // helpers for real-time cost/credit snapshots
 const { deductCredits, getCostCentre } = require("./finance");
@@ -10,6 +11,41 @@ const compression = require("compression");
 const NodeCache = require("node-cache");
 
 const app = express();
+const globalLimiter = rateLimit({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
+  max: Number(process.env.RATE_LIMIT_GLOBAL) || 100,
+
+  standardHeaders: true,
+  legacyHeaders: false,
+
+  handler: (req, res) => {
+    console.warn(
+      `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
+    );
+
+    res.status(429).json({
+      error: "Too many requests. Please try again later."
+    });
+  }
+});
+
+const searchLimiter = rateLimit({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
+  max: Number(process.env.RATE_LIMIT_SEARCH) || 20,
+
+  standardHeaders: true,
+  legacyHeaders: false,
+
+  handler: (req, res) => {
+    console.warn(
+      `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
+    );
+
+    res.status(429).json({
+      error: "Too many search requests. Please slow down."
+    });
+  }
+});
 
 const searchCache = new NodeCache({ stdTTL: 60 });
 
@@ -29,6 +65,16 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
+// Apply global rate limiter to all routes except GET /api/facilities,
+// which has its own dedicated search limiter.
+function globalLimiterUnlessSearch(req, res, next) {
+  if (req.method === "GET" && req.path === "/api/facilities") {
+    return next();
+  }
+  return globalLimiter(req, res, next);
+}
+
+app.use(globalLimiterUnlessSearch);
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
@@ -144,8 +190,7 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, service: "smu-fbs", time: new Date().toISOString(), db });
 });
 
-app.get("/api/facilities", async (req, res) => {
-
+app.get("/api/facilities", searchLimiter, async (req, res) => {
   const cacheKey = JSON.stringify(req.query);
 
   const cachedResult = searchCache.get(cacheKey);
@@ -153,7 +198,6 @@ app.get("/api/facilities", async (req, res) => {
   if (cachedResult) {
     return res.json(cachedResult);
   }
-
   const q = String(req.query.q || "").trim().toLowerCase();
   const minCapacity = Number(req.query.minCapacity || 0) || 0;
   const equipment = String(req.query.equipment || "")
