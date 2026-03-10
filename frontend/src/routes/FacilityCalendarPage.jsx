@@ -105,7 +105,7 @@ export default function FacilityCalendarPage() {
 
   return (
     <AppShell>
-      <div className="container">
+      <div className="container" style={{ paddingBottom: '200px' }}>
         <div className="stack">
           <BookingProgressBar currentStep={2} onStepClick={handleProgressBarClick} />
 
