@@ -78,17 +78,34 @@ function pad2(n) {
 }
 
 function singaporeTodayIso() {
-  const parts = new Intl.DateTimeFormat("en-GB", {
-    timeZone: "Asia/Singapore",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).formatToParts(new Date());
+  // Prefer Intl-based computation when available.
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Singapore",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
 
-  const day = parts.find((p) => p.type === "day")?.value;
-  const month = parts.find((p) => p.type === "month")?.value;
-  const year = parts.find((p) => p.type === "year")?.value;
-  if (!day || !month || !year) return null;
+    const day = parts.find((p) => p.type === "day")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const year = parts.find((p) => p.type === "year")?.value;
+    if (day && month && year) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch (e) {
+    // Fall through to deterministic UTC+8 fallback below.
+  }
+
+  // Deterministic fallback: compute Singapore-local date as UTC+8.
+  const now = new Date();
+  const utcMillis = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+  const singaporeMillis = utcMillis + 8 * 60 * 60 * 1000;
+  const singaporeDate = new Date(singaporeMillis);
+
+  const year = singaporeDate.getUTCFullYear();
+  const month = pad2(singaporeDate.getUTCMonth() + 1);
+  const day = pad2(singaporeDate.getUTCDate());
   return `${year}-${month}-${day}`;
 }
 
