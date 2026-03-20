@@ -77,6 +77,25 @@ function pad2(n) {
   return String(n).padStart(2, "0");
 }
 
+function singaporeTodayIso() {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Singapore",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const day = parts.find((p) => p.type === "day")?.value;
+  const month = parts.find((p) => p.type === "month")?.value;
+  const year = parts.find((p) => p.type === "year")?.value;
+  if (!day || !month || !year) return null;
+  return `${year}-${month}-${day}`;
+}
+
+function isIsoYmd(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
+}
+
 function toMinutes(hhmm) {
   if (!hhmm) return null;
   const [h, m] = String(hhmm).split(":").map(Number);
@@ -861,6 +880,17 @@ app.post("/api/bookings", (req, res) => {
     return;
   }
 
+  if (!isIsoYmd(date)) {
+    res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    return;
+  }
+
+  const todaySg = singaporeTodayIso();
+  if (todaySg && String(date) < todaySg) {
+    res.status(400).json({ message: "Booking date cannot be before today (Singapore time)." });
+    return;
+  }
+
   const db = getDb();
   if (db) {
     try {
@@ -1039,6 +1069,17 @@ app.put("/api/bookings/:id", (req, res) => {
 
   if (!date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
+    return;
+  }
+
+  if (!isIsoYmd(date)) {
+    res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    return;
+  }
+
+  const todaySg = singaporeTodayIso();
+  if (todaySg && String(date) < todaySg) {
+    res.status(400).json({ message: "Booking date cannot be before today (Singapore time)." });
     return;
   }
 
