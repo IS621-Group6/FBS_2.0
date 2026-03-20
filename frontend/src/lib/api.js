@@ -27,6 +27,10 @@ export function getHealth() {
   return request('/api/health')
 }
 
+export function getFilters() {
+  return request('/api/filters')
+}
+
 export function searchFacilities(params) {
   const sp = new URLSearchParams()
 

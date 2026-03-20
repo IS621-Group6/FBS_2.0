@@ -3,8 +3,6 @@ const cors = require("cors");
 const { getDb, sqliteHealth } = require("./sqlite");
 const rateLimit = require("express-rate-limit");
 
-// helpers for real-time cost/credit snapshots
-const { deductCredits, getCostCentre } = require("./finance");
 const { formatBookingConfirmation } = require("./emailTemplates");
 
 const compression = require("compression");
@@ -92,67 +90,50 @@ function toHHMM(minutesFromMidnight) {
   return `${pad2(h)}:${pad2(m)}`;
 }
 
+function toIsoUtcFromDateAndMinutes(dateYmd, minutesFromMidnight) {
+  const raw = String(dateYmd || '').trim();
+  const m = raw.match(/^\d{4}-\d{2}-\d{2}$/);
+  if (!m) return null;
+  const [yy, mm, dd] = raw.split('-').map((x) => Number(x));
+  if (!Number.isFinite(yy) || !Number.isFinite(mm) || !Number.isFinite(dd)) return null;
+  const mins = Number(minutesFromMidnight);
+  if (!Number.isFinite(mins)) return null;
+  const base = Date.UTC(yy, mm - 1, dd, 0, 0, 0);
+  const dt = new Date(base + mins * 60 * 1000);
+  const Y = dt.getUTCFullYear();
+  const M = pad2(dt.getUTCMonth() + 1);
+  const D = pad2(dt.getUTCDate());
+  const H = pad2(dt.getUTCHours());
+  const Min = pad2(dt.getUTCMinutes());
+  return `${Y}-${M}-${D}T${H}:${Min}:00Z`;
+}
+
 function overlaps(aStart, aEnd, bStart, bEnd) {
   return aStart < bEnd && aEnd > bStart;
 }
 
+const MAX_BOOKING_MINUTES = 180;
+
 const SINGLE_CAMPUS_LABEL = "SMU";
-const EQUIPMENT_POOL = [
-  "Projector",
-  "Whiteboard",
-  "Video Conferencing",
-  "Microphone",
-  "PC Lab",
-];
+const { buildSeedFacilities } = require("./facilityCatalog");
+const { computeEquipmentForFacility } = require("./equipment");
 
-function stableHash(str) {
-  let h = 2166136261;
-  for (let i = 0; i < String(str).length; i++) {
-    h ^= String(str).charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function equipmentForFacilityCode(code) {
-  const h = stableHash(code);
-  const picked = [];
-  for (let i = 0; i < EQUIPMENT_POOL.length; i++) {
-    if (((h >> i) & 1) === 1) picked.push(EQUIPMENT_POOL[i]);
-  }
-  // Always return at least one item to keep UI interesting.
-  return picked.length ? picked : [EQUIPMENT_POOL[h % EQUIPMENT_POOL.length]];
+function facilityTypeForCapacity(capacity) {
+  const c = Number(capacity) || 0;
+  if (c <= 1) return "Phone Booth";
+  if (c <= 2) return "Study Booth";
+  if (c <= 4) return "Meeting Pod";
+  if (c <= 8) return "Group Study Room";
+  if (c <= 16) return "Seminar Room";
+  return "Classroom";
 }
 
 function makeFacilities() {
-  const buildings = [
-    "Library",
-    "Academic Building",
-    "Student Centre",
-    "Business School",
-    "Tech Hub",
-  ];
-
-  const facilities = [];
-  let counter = 1;
-  for (const building of buildings) {
-    for (let i = 0; i < 10; i++) {
-      const id = `R-${pad2(counter)}${pad2(i + 1)}`;
-      const capacity = 4 + ((counter * 7 + i * 3) % 80);
-      const equipment = equipmentForFacilityCode(id);
-
-      facilities.push({
-        id,
-        name: `Room ${id} — ${building}`,
-        campus: SINGLE_CAMPUS_LABEL,
-        building,
-        capacity,
-        equipment,
-      });
-    }
-    counter++;
-  }
-  return facilities;
+  const base = buildSeedFacilities({ campusLabel: SINGLE_CAMPUS_LABEL });
+  return base.map((f) => ({
+    ...f,
+    equipment: computeEquipmentForFacility({ facilityName: f.name, facilityType: f.type }),
+  }));
 }
 
 const FACILITIES = makeFacilities();
@@ -164,7 +145,7 @@ const FACILITIES = makeFacilities();
 const BOOKINGS = [
   {
     id: "B-10001",
-    facilityId: "R-0101",
+    facilityId: FACILITIES[0]?.id || "",
     date: "2026-02-20",
     start: "10:00",
     end: "11:00",
@@ -172,7 +153,7 @@ const BOOKINGS = [
   },
   {
     id: "B-10002",
-    facilityId: "R-0101",
+    facilityId: FACILITIES[0]?.id || "",
     date: "2026-02-20",
     start: "14:00",
     end: "15:30",
@@ -190,6 +171,83 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, service: "smu-fbs", time: new Date().toISOString(), db });
 });
 
+// Filter metadata for building/type/equipment chips.
+app.get('/api/filters', (req, res) => {
+  const db = getDb();
+  if (db) {
+    try {
+      const buildings = db
+        .prepare('SELECT DISTINCT building AS name FROM facilities WHERE is_active = 1 ORDER BY building ASC')
+        .all()
+        .map((r) => r.name)
+        .filter(Boolean);
+
+      const types = db
+        .prepare('SELECT type_name AS name FROM facility_type ORDER BY type_name ASC')
+        .all()
+        .map((r) => r.name)
+        .filter(Boolean);
+
+      const equipment = db
+        .prepare('SELECT name FROM equipment ORDER BY name ASC')
+        .all()
+        .map((r) => r.name)
+        .filter(Boolean);
+
+      const cap = db.prepare('SELECT MIN(capacity) AS min, MAX(capacity) AS max FROM facilities WHERE is_active = 1').get();
+      res.json({ buildings, types, equipment, capacity: { min: Number(cap?.min) || 0, max: Number(cap?.max) || 0 } });
+      return;
+    } catch (e) {
+      console.error('Error building /api/filters from SQLite; falling back to in-memory:', e);
+    }
+  }
+
+  const buildings = Array.from(new Set(FACILITIES.map((f) => f.building).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const types = Array.from(new Set(FACILITIES.map((f) => f.type).filter(Boolean))).sort((a, b) => a.localeCompare(b));
+  const equipment = Array.from(
+    new Set(
+      FACILITIES.flatMap((f) => (Array.isArray(f.equipment) ? f.equipment : [])).filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+  const caps = FACILITIES.map((f) => Number(f.capacity) || 0).filter((n) => Number.isFinite(n) && n > 0);
+  const min = caps.length ? Math.min(...caps) : 0;
+  const max = caps.length ? Math.max(...caps) : 0;
+  res.json({ buildings, types, equipment, capacity: { min, max } });
+});
+
+// Debug info (non-production only).
+app.get('/api/debug', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    res.status(404).json({ message: 'Not found' });
+    return;
+  }
+
+  const db = getDb();
+  const out = {
+    inMemoryFacilities: FACILITIES.length,
+    dbEnabled: Boolean(db),
+    dbPath: sqliteHealth()?.path,
+    dbCounts: null,
+  };
+
+  if (db) {
+    try {
+      out.dbCounts = {
+        facilities: db.prepare('SELECT COUNT(*) AS c FROM facilities').get()?.c || 0,
+        activeFacilities: db.prepare('SELECT COUNT(*) AS c FROM facilities WHERE is_active = 1').get()?.c || 0,
+        facilityTypes: db.prepare('SELECT COUNT(*) AS c FROM facility_type').get()?.c || 0,
+        equipment: db.prepare('SELECT COUNT(*) AS c FROM equipment').get()?.c || 0,
+        facilityEquipment: db.prepare('SELECT COUNT(*) AS c FROM facility_equipment').get()?.c || 0,
+        bookingDetail: db.prepare('SELECT COUNT(*) AS c FROM booking_detail').get()?.c || 0,
+      };
+    } catch (e) {
+      out.dbCounts = { error: e?.message || String(e) };
+    }
+  }
+
+  res.json(out);
+});
+
 app.get("/api/facilities", searchLimiter, async (req, res) => {
   const cacheKey = JSON.stringify(req.query);
 
@@ -199,11 +257,70 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
     return res.json(cachedResult);
   }
   const q = String(req.query.q || "").trim().toLowerCase();
-  const minCapacity = Number(req.query.minCapacity || 0) || 0;
+  const building = String(req.query.building || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const floor = String(req.query.floor || "")
+    .split(",")
+    .map((s) => String(s).trim())
+    .filter(Boolean)
+    .map((s) => Number(s))
+    .filter((n) => Number.isFinite(n));
+  const type = String(req.query.type || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const capacityRaw = String(req.query.capacity || "").trim();
+  const capacityMinRaw = Number(req.query.capacityMin || 0) || 0;
+  const capacityMaxRaw = Number(req.query.capacityMax || 0) || 0;
+  const minCapacityLegacy = Number(req.query.minCapacity || 0) || 0;
+
+  let capacityMin = capacityMinRaw;
+  let capacityMax = capacityMaxRaw;
+
+  if (capacityRaw) {
+    const plus = capacityRaw.match(/^\s*(\d+)\s*\+\s*$/);
+    const range = capacityRaw.match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+    const single = capacityRaw.match(/^\s*(\d+)\s*$/);
+
+    if (plus?.[1]) {
+      capacityMin = Number(plus[1]) || 0;
+      capacityMax = 0;
+    } else if (range?.[1] && range?.[2]) {
+      const a = Number(range[1]) || 0;
+      const b = Number(range[2]) || 0;
+      capacityMin = Math.min(a, b);
+      capacityMax = Math.max(a, b);
+    } else if (single?.[1]) {
+      capacityMin = Number(single[1]) || 0;
+      capacityMax = 0;
+    }
+  }
+
+  if (capacityMin <= 0 && minCapacityLegacy > 0) capacityMin = minCapacityLegacy;
   const equipment = String(req.query.equipment || "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+
+  // Availability filter: only apply when the user explicitly provides date + start + end.
+  // Frontend always sends a default start for previews; do NOT filter unless end is present.
+  const date = String(req.query.date || '').trim();
+  const startQ = String(req.query.start || '').trim();
+  const endQ = String(req.query.end || '').trim();
+  const slotStartMin = toMinutes(startQ);
+  const slotEndMin = toMinutes(endQ);
+  const shouldFilterByAvailability =
+    Boolean(date) &&
+    Boolean(startQ) &&
+    Boolean(endQ) &&
+    slotStartMin !== null &&
+    slotEndMin !== null &&
+    slotEndMin > slotStartMin;
+  const slotStartIso = shouldFilterByAvailability ? toIsoUtcFromDateAndMinutes(date, slotStartMin) : null;
+  const slotEndIso = shouldFilterByAvailability ? toIsoUtcFromDateAndMinutes(date, slotEndMin) : null;
+  const hasValidAvailabilityWindow = shouldFilterByAvailability && slotStartIso && slotEndIso;
   const page = Math.max(1, Number(req.query.page || 1));
   const pageSize = Math.min(50, Math.max(1, Number(req.query.pageSize || 12)));
 
@@ -216,8 +333,42 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
           `(facility_code LIKE ? OR facility_name LIKE ? OR building LIKE ?)`
         );
       }
-      if (minCapacity > 0) {
+      if (capacityMin > 0) {
         clauses.push(`capacity >= ?`);
+      }
+      if (capacityMax > 0) {
+        clauses.push(`capacity <= ?`);
+      }
+      if (building.length) {
+        clauses.push(`building IN (${building.map(() => "?").join(",")})`);
+      }
+      if (floor.length) {
+        clauses.push(`floor IN (${floor.map(() => "?").join(",")})`);
+      }
+
+      if (hasValidAvailabilityWindow) {
+        clauses.push(
+          `NOT EXISTS (
+             SELECT 1
+             FROM booking_detail bd
+             WHERE bd.facility_id = f.facility_id
+               AND bd.start_time < ?
+               AND bd.end_time > ?
+           )`
+        );
+      }
+
+      // Require that each requested equipment item exists for the facility.
+      // Implemented as EXISTS per equipment, so all requested items must match.
+      for (const _ of equipment) {
+        clauses.push(
+          `EXISTS (
+             SELECT 1
+             FROM facility_equipment fe
+             JOIN equipment e ON e.equipment_id = fe.equipment_id
+             WHERE fe.facility_id = f.facility_id AND e.name = ?
+           )`
+        );
       }
 
       let whereParams = [];
@@ -229,33 +380,63 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
           const qLike = `%${q}%`;
           whereParams.push(qLike, qLike, qLike);
         }
-        if (minCapacity > 0) whereParams.push(minCapacity);
+        if (capacityMin > 0) whereParams.push(capacityMin);
+        if (capacityMax > 0) whereParams.push(capacityMax);
+        if (building.length) whereParams.push(...building);
+        if (floor.length) whereParams.push(...floor);
+        if (hasValidAvailabilityWindow) whereParams.push(slotEndIso, slotStartIso);
+
+        // Add equipment params (in same order as clauses added).
+        if (equipment.length) whereParams.push(...equipment);
       }
 
       const rows = db
         .prepare(
-          `SELECT facility_code, facility_name, building, floor, capacity
-           FROM facilities
-           ${whereSql}
-           ORDER BY facility_name ASC, facility_code ASC`
+            `SELECT f.facility_id,
+                    f.facility_code,
+                    f.facility_name,
+                    f.building,
+                    f.floor,
+                    f.capacity,
+                    ft.type_name AS type_name,
+                    group_concat(e.name) AS equipment_csv
+             FROM facilities f
+             LEFT JOIN facility_type ft ON ft.facility_type_id = f.facility_type_id
+             LEFT JOIN facility_equipment fe ON fe.facility_id = f.facility_id
+             LEFT JOIN equipment e ON e.equipment_id = fe.equipment_id
+             ${whereSql}
+             GROUP BY f.facility_id
+             ORDER BY f.facility_name ASC, f.facility_code ASC`
         )
         .all(whereParams);
 
       let items = rows.map((r) => {
         const id = r.facility_code;
+        const capacity = Number(r.capacity) || 0;
+          const equipmentList = String(r.equipment_csv || '')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
         return {
           id,
           name: r.facility_name,
           campus: SINGLE_CAMPUS_LABEL,
           building: r.building,
-          capacity: Number(r.capacity) || 0,
-          equipment: equipmentForFacilityCode(id),
+          floor: Number(r.floor) || 0,
+          capacity,
+          type: r.type_name || facilityTypeForCapacity(capacity),
+            equipment: equipmentList,
         };
       });
 
-      if (equipment.length) {
-        items = items.filter((f) => equipment.every((e) => (f.equipment || []).includes(e)));
+      if (type.length) {
+        const set = new Set(type);
+        items = items.filter((f) => set.has(f.type));
       }
+
+      // Equipment filtering is already applied in SQL via EXISTS,
+      // but keep this as a safety net for any unexpected data.
+      if (equipment.length) items = items.filter((f) => equipment.every((e) => (f.equipment || []).includes(e)));
 
       const total = items.length;
       const pageCount = Math.max(1, Math.ceil(total / pageSize));
@@ -279,11 +460,40 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
       return hay.includes(q);
     });
   }
-  if (minCapacity > 0) {
-    items = items.filter((f) => f.capacity >= minCapacity);
+  if (capacityMin > 0) {
+    items = items.filter((f) => f.capacity >= capacityMin);
+  }
+  if (capacityMax > 0) {
+    items = items.filter((f) => f.capacity <= capacityMax);
+  }
+  if (building.length) {
+    const set = new Set(building);
+    items = items.filter((f) => set.has(f.building));
+  }
+  if (floor.length) {
+    const set = new Set(floor);
+    items = items.filter((f) => set.has(Number(f.floor) || 0));
+  }
+  if (type.length) {
+    const set = new Set(type);
+    items = items.filter((f) => set.has(f.type));
   }
   if (equipment.length) {
     items = items.filter((f) => equipment.every((e) => (f.equipment || []).includes(e)));
+  }
+
+  if (hasValidAvailabilityWindow) {
+    items = items.filter((f) => {
+      const facilityId = String(f.id);
+      const conflicts = BOOKINGS.filter((b) => b.facilityId === facilityId && b.date === date);
+      if (!conflicts.length) return true;
+      return !conflicts.some((b) => {
+        const bStart = toMinutes(b.start);
+        const bEnd = toMinutes(b.end);
+        if (bStart === null || bEnd === null) return false;
+        return overlaps(slotStartMin, slotEndMin, bStart, bEnd);
+      });
+    });
   }
 
   const total = items.length;
@@ -302,22 +512,38 @@ app.get("/api/facilities/:id", (req, res) => {
     try {
       const r = db
         .prepare(
-          `SELECT facility_code, facility_name, building, floor, capacity
-           FROM facilities
-           WHERE facility_code = ? AND is_active = 1`
+          `SELECT f.facility_code,
+                  f.facility_name,
+                  f.building,
+                  f.floor,
+                  f.capacity,
+                  ft.type_name AS type_name,
+                  group_concat(e.name) AS equipment_csv
+           FROM facilities f
+           LEFT JOIN facility_type ft ON ft.facility_type_id = f.facility_type_id
+           LEFT JOIN facility_equipment fe ON fe.facility_id = f.facility_id
+           LEFT JOIN equipment e ON e.equipment_id = fe.equipment_id
+           WHERE f.facility_code = ? AND f.is_active = 1`
         )
         .get(req.params.id);
       if (!r) {
         res.status(404).json({ message: "Facility not found" });
         return;
       }
+      const capacity = Number(r.capacity) || 0;
+      const equipmentList = String(r.equipment_csv || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
       res.json({
         id: r.facility_code,
         name: r.facility_name,
         campus: SINGLE_CAMPUS_LABEL,
         building: r.building,
-        capacity: Number(r.capacity) || 0,
-        equipment: equipmentForFacilityCode(r.facility_code),
+        floor: Number(r.floor) || 0,
+        capacity,
+        type: r.type_name || facilityTypeForCapacity(capacity),
+        equipment: equipmentList,
       });
       return;
     } catch (e) {
@@ -615,8 +841,25 @@ app.post("/api/bookings", (req, res) => {
       }
 
       const facilityDbId = Number(facilityRow.facility_id);
-      const startTs = `${date} ${start}:00`;
-      const endTs = `${date} ${end}:00`;
+
+      const startMin = toMinutes(start);
+      const endMin = toMinutes(end);
+      if (startMin === null || endMin === null || endMin <= startMin) {
+        res.status(400).json({ message: "Invalid time range" });
+        return;
+      }
+
+      if (endMin - startMin > MAX_BOOKING_MINUTES) {
+        res.status(400).json({ message: "Bookings are limited to 3 hours." });
+        return;
+      }
+
+      const startTs = toIsoUtcFromDateAndMinutes(date, startMin);
+      const endTs = toIsoUtcFromDateAndMinutes(date, endMin);
+      if (!startTs || !endTs) {
+        res.status(400).json({ message: "Invalid date/time" });
+        return;
+      }
 
       const conflict = db
         .prepare(
@@ -672,16 +915,7 @@ app.post("/api/bookings", (req, res) => {
       });
 
       const bookingId = tx();
-      // compute role‑aware financial snapshot
-      let extra = {};
-      if (userRole === "student") {
-        // for demo every booking costs 100 credits
-        const { deducted, remaining } = deductCredits(email, 100);
-        extra = { deducted, creditsRemaining: remaining };
-      } else if (userRole === "staff") {
-        extra.costCentre = getCostCentre(email);
-      }
-      const emailBody = formatBookingConfirmation(userRole, extra);
+      const emailBody = formatBookingConfirmation(userRole);
       console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole });
 
       res.status(201).json({
@@ -692,7 +926,6 @@ app.post("/api/bookings", (req, res) => {
         end,
         userEmail: email,
         reason: reasonTrimmed || undefined,
-        ...extra,
       });
       return;
     } catch (e) {
@@ -711,6 +944,11 @@ app.post("/api/bookings", (req, res) => {
   const endMin = toMinutes(end);
   if (startMin === null || endMin === null || endMin <= startMin) {
     res.status(400).json({ message: "Invalid time range" });
+    return;
+  }
+
+  if (endMin - startMin > MAX_BOOKING_MINUTES) {
+    res.status(400).json({ message: "Bookings are limited to 3 hours." });
     return;
   }
 
@@ -746,18 +984,10 @@ app.post("/api/bookings", (req, res) => {
   };
 
   BOOKINGS.push(booking);
-  // compute extras for in-memory case
-  let extra = {};
-  if (userRole === "student") {
-    const { deducted, remaining } = deductCredits(email, 100);
-    extra = { deducted, creditsRemaining: remaining };
-  } else if (userRole === "staff") {
-    extra.costCentre = getCostCentre(email);
-  }
-  const emailBody = formatBookingConfirmation(userRole, extra);
+  const emailBody = formatBookingConfirmation(userRole);
   console.log("SEND_EMAIL", { bookingId: booking.id, userRole });
 
-  res.status(201).json({ ...booking, ...extra });
+  res.status(201).json(booking);
 });
 
 app.put("/api/bookings/:id", (req, res) => {
@@ -780,6 +1010,11 @@ app.put("/api/bookings/:id", (req, res) => {
   const endMin = toMinutes(end);
   if (startMin === null || endMin === null || endMin <= startMin) {
     res.status(400).json({ message: "Invalid time range" });
+    return;
+  }
+
+  if (endMin - startMin > MAX_BOOKING_MINUTES) {
+    res.status(400).json({ message: "Bookings are limited to 3 hours." });
     return;
   }
 
@@ -822,8 +1057,12 @@ app.put("/api/bookings/:id", (req, res) => {
         return;
       }
 
-      const startTs = `${date} ${start}:00`;
-      const endTs = `${date} ${end}:00`;
+      const startTs = toIsoUtcFromDateAndMinutes(date, startMin);
+      const endTs = toIsoUtcFromDateAndMinutes(date, endMin);
+      if (!startTs || !endTs) {
+        res.status(400).json({ message: "Invalid date/time" });
+        return;
+      }
 
       const conflict = db
         .prepare(

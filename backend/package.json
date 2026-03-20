@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "init-db": "node scripts/init-sqlite.js"
   },
   "keywords": [],
@@ -21,5 +21,9 @@
     "express-rate-limit": "^8.3.0",
     "node-cache": "^5.1.2",
     "nodemon": "^3.1.11"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.1.4"
   }
 }
