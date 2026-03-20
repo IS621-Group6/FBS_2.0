@@ -77,6 +77,70 @@ function pad2(n) {
   return String(n).padStart(2, "0");
 }
 
+function singaporeTodayIso() {
+  // Prefer Intl-based computation when available.
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Singapore",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+
+    const day = parts.find((p) => p.type === "day")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const year = parts.find((p) => p.type === "year")?.value;
+    if (day && month && year) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch (e) {
+    // Fall through to deterministic UTC+8 fallback below.
+  }
+
+  // Deterministic fallback: compute Singapore-local date as UTC+8.
+  const now = new Date();
+  const utcMillis = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+  const singaporeMillis = utcMillis + 8 * 60 * 60 * 1000;
+  const singaporeDate = new Date(singaporeMillis);
+
+  const year = singaporeDate.getUTCFullYear();
+  const month = pad2(singaporeDate.getUTCMonth() + 1);
+  const day = pad2(singaporeDate.getUTCDate());
+  return `${year}-${month}-${day}`;
+}
+
+function isIsoYmd(value) {
+  const str = String(value || "").trim();
+
+  // First, ensure the basic YYYY-MM-DD shape.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return false;
+  }
+
+  const [yearStr, monthStr, dayStr] = str.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return false;
+  }
+
+  // Use UTC to avoid timezone-related date shifts.
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  // Round-trip to canonical ISO date and ensure it matches exactly.
+  const isoYmd = date.toISOString().slice(0, 10);
+  return isoYmd === str;
+}
+
 function toMinutes(hhmm) {
   if (!hhmm) return null;
   const [h, m] = String(hhmm).split(":").map(Number);
@@ -861,6 +925,17 @@ app.post("/api/bookings", (req, res) => {
     return;
   }
 
+  if (!isIsoYmd(date)) {
+    res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    return;
+  }
+
+  const todaySg = singaporeTodayIso();
+  if (todaySg && String(date) < todaySg) {
+    res.status(400).json({ message: "Booking date cannot be before today (Singapore time)." });
+    return;
+  }
+
   const db = getDb();
   if (db) {
     try {
@@ -1039,6 +1114,17 @@ app.put("/api/bookings/:id", (req, res) => {
 
   if (!date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
+    return;
+  }
+
+  if (!isIsoYmd(date)) {
+    res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    return;
+  }
+
+  const todaySg = singaporeTodayIso();
+  if (todaySg && String(date) < todaySg) {
+    res.status(400).json({ message: "Booking date cannot be before today (Singapore time)." });
     return;
   }
 

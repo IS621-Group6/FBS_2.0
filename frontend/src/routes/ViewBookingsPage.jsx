@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AppShell from '../components/AppShell'
 import { cancelBooking, getBookings, modifyBooking } from '../lib/api'
+import { isoToday } from '../lib/time'
 import useAuth from '../lib/useAuth'
 
 function formatStatus(status) {
@@ -70,7 +71,7 @@ export default function ViewBookingsPage() {
   })
   const [selectedDate, setSelectedDate] = useState('')
 
-  const todayIso = isoFromDate(new Date())
+  const todayIso = isoToday()
 
   const sortedItems = useMemo(() => {
     const now = new Date()
@@ -315,6 +316,11 @@ export default function ViewBookingsPage() {
     const { date, start, end } = modifyForm
     if (!date || !start || !end) {
       setModifyError('All fields are required')
+      return
+    }
+
+    if (date < todayIso) {
+      setModifyError("You can't book a past date/time")
       return
     }
 
@@ -605,6 +611,7 @@ export default function ViewBookingsPage() {
                         className="input"
                         value={modifyForm.date}
                         onChange={(e) => handleModifyFormChange('date', e.target.value)}
+                        min={todayIso}
                         required
                         disabled={isModifying}
                       />

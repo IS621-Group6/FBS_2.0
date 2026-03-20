@@ -20,9 +20,18 @@ export function overlaps(aStart, aEnd, bStart, bEnd) {
 }
 
 export function isoToday() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Singapore',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const year = parts.find((p) => p.type === 'year')?.value
+  const month = parts.find((p) => p.type === 'month')?.value
+  const day = parts.find((p) => p.type === 'day')?.value
+
+  if (year && month && day) return `${year}-${month}-${day}`
+
   const now = new Date()
-  const yyyy = now.getFullYear()
-  const mm = pad2(now.getMonth() + 1)
-  const dd = pad2(now.getDate())
-  return `${yyyy}-${mm}-${dd}`
+  return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`
 }
