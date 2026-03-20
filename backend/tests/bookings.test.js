@@ -25,9 +25,15 @@ function singaporeTodayIso() {
     month: "2-digit",
     day: "2-digit",
   }).formatToParts(new Date());
-  const day = parts.find((p) => p.type === "day")?.value;
-  const month = parts.find((p) => p.type === "month")?.value;
-  const year = parts.find((p) => p.type === "year")?.value;
+  const dayPart = parts.find((p) => p.type === "day");
+  const monthPart = parts.find((p) => p.type === "month");
+  const yearPart = parts.find((p) => p.type === "year");
+  if (!dayPart?.value || !monthPart?.value || !yearPart?.value) {
+    throw new Error("Failed to compute Singapore ISO date for tests");
+  }
+  const day = dayPart.value;
+  const month = monthPart.value;
+  const year = yearPart.value;
   return `${year}-${month}-${day}`;
 }
 
