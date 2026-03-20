@@ -31,14 +31,24 @@ if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath)
 const db = new Database(dbPath)
 try {
   db.pragma('foreign_keys = ON')
+
+  console.log('Initializing SQLite schema...')
   execSql(db, readSql(schemaPath))
+
+  console.log('Seeding demo data...')
   execSql(db, readSql(seedPath))
 
-  const { c: facilities } = db.prepare('SELECT COUNT(*) AS c FROM facilities').get()
-  const { c: bookings } = db.prepare('SELECT COUNT(*) AS c FROM bookings').get()
+  const [{ c: facilityTypes }] = db.prepare('SELECT COUNT(*) AS c FROM facility_type').all()
+  const [{ c: facilities }] = db.prepare('SELECT COUNT(*) AS c FROM facilities').all()
+  const [{ c: users }] = db.prepare('SELECT COUNT(*) AS c FROM users').all()
+  const [{ c: bookings }] = db.prepare('SELECT COUNT(*) AS c FROM bookings').all()
+  const [{ c: bookingSlots }] = db.prepare('SELECT COUNT(*) AS c FROM booking_detail').all()
 
   console.log(`SQLite DB created: ${dbPath}`)
-  console.log(`Seeded facilities: ${facilities}, bookings: ${bookings}`)
+  console.log(`Seeded: ${facilityTypes} facility types, ${facilities} facilities, ${users} users, ${bookings} bookings, ${bookingSlots} booking slots.`)
+} catch (err) {
+  console.error('Failed to create or seed SQLite DB:', err)
+  process.exitCode = 1
 } finally {
   db.close()
 }
