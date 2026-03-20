@@ -24,7 +24,7 @@ instance.on('done', (result) => {
 
   console.log('\nPerf smoke summary')
   console.log(`- URL: ${baseUrl}/api/facilities?page=1&pageSize=20`)
-  console.log(`- Duration: ${duration}s`) 
+  console.log(`- Duration: ${duration}s`)
   console.log(`- Connections: ${connections}`)
   console.log(`- Avg req/sec: ${rps}`)
   console.log(`- P99 latency: ${p99} ms`)
