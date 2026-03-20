@@ -7,11 +7,42 @@ import { BookingList } from './components/BookingList';
 import { FilterPanel } from './components/FilterPanel';
 import { LoginPage } from './components/LoginPage';
 import { getAvailableRoomsByFilters, isRoomAvailable } from './utils/availability';
-import { Building2, Calendar, LogOut, User as UserIcon } from 'lucide-react';
-import { toast } from 'sonner';
-import { Toaster } from 'sonner';
 import { cancelBooking, createBooking, fetchAllFacilities, fetchBookings } from './utils/fbsApi';
 
+type IconProps = React.SVGProps<SVGSVGElement>;
+
+const IconBase = (props: IconProps) => (
+  <svg
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    focusable="false"
+    {...props}
+  />
+);
+
+export const Building2 = (props: IconProps) => <IconBase {...props} />;
+export const Calendar = (props: IconProps) => <IconBase {...props} />;
+export const LogOut = (props: IconProps) => <IconBase {...props} />;
+export const UserIcon = (props: IconProps) => <IconBase {...props} />;
+
+export function toast(message?: unknown, ...rest: unknown[]) {
+  const text =
+    typeof message === 'string'
+      ? message
+      : message instanceof Error
+      ? message.message
+      : JSON.stringify(message);
+  if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+    window.alert(text);
+  } else {
+    // eslint-disable-next-line no-console
+    console.log(text, ...rest);
+  }
+}
+
+export function Toaster() {
+  return null;
+}
 type TabType = 'rooms' | 'bookings';
 
 export default function App() {
