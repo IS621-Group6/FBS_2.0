@@ -518,12 +518,13 @@ app.get("/api/facilities/:id", (req, res) => {
                   f.floor,
                   f.capacity,
                   ft.type_name AS type_name,
-                  group_concat(e.name) AS equipment_csv
+                  group_concat(DISTINCT e.name) AS equipment_csv
            FROM facilities f
            LEFT JOIN facility_type ft ON ft.facility_type_id = f.facility_type_id
            LEFT JOIN facility_equipment fe ON fe.facility_id = f.facility_id
            LEFT JOIN equipment e ON e.equipment_id = fe.equipment_id
-           WHERE f.facility_code = ? AND f.is_active = 1`
+           WHERE f.facility_code = ? AND f.is_active = 1
+           GROUP BY f.facility_id`
         )
         .get(req.params.id);
       if (!r) {
