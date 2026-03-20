@@ -5,6 +5,8 @@ PRAGMA foreign_keys = ON;
 
 DROP TABLE IF EXISTS booking_detail;
 DROP TABLE IF EXISTS bookings;
+DROP TABLE IF EXISTS facility_equipment;
+DROP TABLE IF EXISTS equipment;
 DROP TABLE IF EXISTS facilities;
 DROP TABLE IF EXISTS facility_type;
 DROP TABLE IF EXISTS users;
@@ -31,6 +33,19 @@ CREATE TABLE facilities (
   facility_type_id INTEGER,
   is_active INTEGER NOT NULL DEFAULT 1,
   FOREIGN KEY (facility_type_id) REFERENCES facility_type(facility_type_id)
+);
+
+CREATE TABLE equipment (
+  equipment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE facility_equipment (
+  facility_id INTEGER NOT NULL,
+  equipment_id INTEGER NOT NULL,
+  PRIMARY KEY (facility_id, equipment_id),
+  FOREIGN KEY (facility_id) REFERENCES facilities(facility_id) ON DELETE CASCADE,
+  FOREIGN KEY (equipment_id) REFERENCES equipment(equipment_id) ON DELETE CASCADE
 );
 
 -- NOTE ON TIMEZONES:
@@ -68,3 +83,9 @@ ON facilities (building);
 
 CREATE INDEX IF NOT EXISTS idx_facility_capacity
 ON facilities (capacity);
+
+CREATE INDEX IF NOT EXISTS idx_facility_equipment_equipment
+ON facility_equipment (equipment_id);
+
+CREATE INDEX IF NOT EXISTS idx_facility_equipment_facility
+ON facility_equipment (facility_id);

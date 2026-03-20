@@ -1,80 +1,59 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useMemo, useState } from 'react'
+import { Link, NavLink } from 'react-router-dom'
 import useAuth from '../lib/useAuth'
 
-function useQuery() {
-  const { search } = useLocation()
-  return useMemo(() => new URLSearchParams(search), [search])
-}
-
-export default function AppShell({ children, showSearch = true }) {
-  const navigate = useNavigate()
+export default function AppShell({ children }) {
   const { user, logout } = useAuth()
-  const q = useQuery().get('q') || ''
-  const [query, setQuery] = useState(q)
-
-  useEffect(() => {
-    Promise.resolve().then(() => setQuery(q))
-  }, [q])
-
-  const onSubmit = (e) => {
-    e.preventDefault()
-    const sp = new URLSearchParams()
-    if (query.trim()) sp.set('q', query.trim())
-    navigate(`/?${sp.toString()}`)
-  }
 
   return (
     <div className="appRoot">
       <header className="topNav">
         <div className="topNavInner">
-          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link to="/search" style={{ display: 'flex', alignItems: 'center', gap: 15 }}>
             <div
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 10,
+                width: 45,
+                height: 45,
+                borderRadius: 13,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--primary-contrast)',
                 background: 'color-mix(in srgb, var(--primary-contrast) 14%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--primary-contrast) 22%, transparent)',
               }}
-            />
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 10.5L12 4l9 6.5" />
+                <path d="M5 10v10h14V10" />
+                <path d="M9 20v-6h6v6" />
+              </svg>
+            </div>
             <div className="brand">
-              <div className="brandTitle">SMU Facility Booking 2.0</div>
-              <div className="brandSub">Search-first room booking</div>
+              <div className="brandTitle">SMU Facility booking 2.0</div>
             </div>
           </Link>
 
-          <div className="navGrow">
-            {showSearch ? (
-              <form onSubmit={onSubmit} className="row" role="search" aria-label="Global search">
-                <input
-                  className="input"
-                  style={{ maxWidth: 520 }}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by room name, building, or feature (e.g., 'seminar', 'projector')"
-                />
-                <button className="btn btnPrimary" type="submit">
-                  Search
-                </button>
-              </form>
-            ) : null}
-          </div>
+          <div className="navGrow" />
 
           <div className="navRight">
-            <Link className="btn btnPrimary" to="/booking/new">
-              New Booking
-            </Link>
-            <Link className="btn" to="/bookings">
-              My bookings
-            </Link>
-            <span className="pill">{user?.email || 'Signed out'}</span>
-            <button className="btn" type="button" onClick={logout}>
+            <span className="navEmail">{user?.email || 'Signed out'}</span>
+            <button className="btn btnDanger" type="button" onClick={logout}>
               Logout
             </button>
           </div>
         </div>
       </header>
+
+      <div className="primaryTabsBar" aria-label="Primary navigation">
+        <div className="primaryTabsInner">
+          <NavLink to="/search" className={({ isActive }) => `primaryTab ${isActive ? 'primaryTabActive' : ''}`}>
+            Available rooms
+          </NavLink>
+          <NavLink to="/bookings" className={({ isActive }) => `primaryTab ${isActive ? 'primaryTabActive' : ''}`}>
+            View bookings
+          </NavLink>
+        </div>
+      </div>
 
       <main>{children}</main>
     </div>

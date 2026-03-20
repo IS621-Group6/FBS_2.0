@@ -6,7 +6,7 @@ This is the front-end and back-end code for **SMU FBS 2.0**, SMU's improved faci
 
 ## Project Structure
 
-FBS_3.0/
+FBS_2.0/
 ├─ frontend/ # React + Vite frontend
 ├─ backend/ # Node.js + Express backend
 ├─ .gitignore
@@ -28,7 +28,7 @@ Make sure you have installed:
 
 ```bash
 git clone https://github.com/Cherrilynss/FBS_2.0.git
-cd smu-fbs-3
+cd FBS_2.0
 ```
 
 ## 2. Install dependencies
@@ -50,12 +50,15 @@ npm install
 **Terminal A: Backend**
 ```bash
 cd backend
-node index.js
+npm run init-db
+npm run start
 ```
+
+`npm run init-db` recreates `database/fbs.sqlite` and seeds the full SMU facility catalog plus equipment.
 
 You should see:
 ```
-Server running on 3001
+Backend running on port 3001
 ```
 
 **Terminal B: Frontend**
@@ -76,4 +79,4 @@ Go to your browser and open:
 
 ```
 http://localhost:5173
-```Development environment setup verified.
+```

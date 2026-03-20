@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import { createBooking, getFacility } from '../lib/api'
+import { parseTimeToMinutes } from '../lib/time'
 import useAuth from '../lib/useAuth'
+
+const MAX_BOOKING_MINUTES = 180
 
 export default function BookingConfirmPage() {
   const [sp] = useSearchParams()
@@ -22,6 +25,15 @@ export default function BookingConfirmPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const reasonTrimmed = useMemo(() => reason.trim(), [reason])
+
+  const durationError = useMemo(() => {
+    const startMin = parseTimeToMinutes(start)
+    const endMin = parseTimeToMinutes(end)
+    if (startMin === null || endMin === null) return 'Invalid time range'
+    if (endMin <= startMin) return 'End time must be after start time'
+    if (endMin - startMin > MAX_BOOKING_MINUTES) return 'Bookings are limited to 3 hours'
+    return ''
+  }, [start, end])
 
   const calendarUrl = useMemo(() => {
     const next = new URLSearchParams()
@@ -56,6 +68,10 @@ export default function BookingConfirmPage() {
   const userRole = user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff'
 
   const submit = async () => {
+    if (durationError) {
+      alert(durationError)
+      return
+    }
     if (!reasonTrimmed) {
       return
     }
@@ -123,6 +139,13 @@ export default function BookingConfirmPage() {
                 </div>
               </div>
 
+              {durationError ? (
+                <div className="alert alertDanger" role="status" aria-live="polite">
+                  <div className="alertTitle">Cannot book this time</div>
+                  <div className="muted">{durationError}.</div>
+                </div>
+              ) : null}
+
               <div className="divider" />
 
               <div className="field">
@@ -152,7 +175,7 @@ export default function BookingConfirmPage() {
                 <Link className="btn" to={calendarUrl}>
                   Change time
                 </Link>
-                <button className="btn btnPrimary" onClick={submit} disabled={!ack || !reasonTrimmed || isSubmitting || !userEmail}>
+                <button className="btn btnPrimary" onClick={submit} disabled={!ack || !reasonTrimmed || isSubmitting || !userEmail || Boolean(durationError)}>
                   {isSubmitting ? 'Booking…' : 'Confirm booking'}
                 </button>
               </div>
