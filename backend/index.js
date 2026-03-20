@@ -110,7 +110,35 @@ function singaporeTodayIso() {
 }
 
 function isIsoYmd(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || "").trim());
+  const str = String(value || "").trim();
+
+  // First, ensure the basic YYYY-MM-DD shape.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return false;
+  }
+
+  const [yearStr, monthStr, dayStr] = str.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return false;
+  }
+
+  // Use UTC to avoid timezone-related date shifts.
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  // Round-trip to canonical ISO date and ensure it matches exactly.
+  const isoYmd = date.toISOString().slice(0, 10);
+  return isoYmd === str;
 }
 
 function toMinutes(hhmm) {
