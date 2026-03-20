@@ -166,9 +166,44 @@ function nextBookingId() {
   return `B-${base}`;
 }
 
-app.get("/api/health", (req, res) => {
-  const db = sqliteHealth();
-  res.json({ ok: true, service: "smu-fbs", time: new Date().toISOString(), db });
+app.get("/api/health", async (req, res) => {
+  const startTime = Date.now();
+
+  try {
+    const db = sqliteHealth();
+
+    // 🔹 Determine DB status
+    const dbStatus = db?.ok ? "CONNECTED" : "DISCONNECTED";
+
+    // 🔹 Determine overall system status
+    const status = dbStatus === "CONNECTED" ? "OK" : "DEGRADED";
+
+    const responseTime = Date.now() - startTime;
+
+    // 🔹 Logging
+    console.log(
+      `[HEALTH] ${new Date().toISOString()} | status=${status} | db=${dbStatus} | ${responseTime}ms`
+    );
+
+    res.status(200).json({
+      status,
+      service: "smu-fbs",
+      database: dbStatus,
+      responseTimeMs: responseTime,
+      timestamp: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    console.error(
+      `[HEALTH ERROR] ${new Date().toISOString()} | ${error.message}`
+    );
+
+    res.status(500).json({
+      status: "ERROR",
+      message: "Health check failed",
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // Filter metadata for building/type/equipment chips.
