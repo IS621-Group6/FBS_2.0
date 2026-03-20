@@ -70,7 +70,7 @@ export default function ViewBookingsPage() {
   })
   const [selectedDate, setSelectedDate] = useState('')
 
-  const todayIso = useMemo(() => isoFromDate(new Date()), [])
+  const todayIso = isoFromDate(new Date())
 
   const sortedItems = useMemo(() => {
     const now = new Date()
