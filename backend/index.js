@@ -7,6 +7,7 @@ const { formatBookingConfirmation } = require("./emailTemplates");
 
 const compression = require("compression");
 const NodeCache = require("node-cache");
+const validateBookingInput = require("./middleware/validateBookingInput");
 
 const app = express();
 const globalLimiter = rateLimit({
@@ -851,15 +852,12 @@ app.get("/api/bookings", (req, res) => {
   res.json({ items });
 });
 
-app.post("/api/bookings", (req, res) => {
+app.post("/api/bookings", validateBookingInput, (req, res) => {
   const { facilityId, date, start, end, userEmail, reason } = req.body || {};
   // role may come from a header or the body; default to student for sanity
   const userRole = String(req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
 
-  if (!facilityId || !date || !start || !end) {
-    res.status(400).json({ message: "Missing required booking fields" });
-    return;
-  }
+ 
 
   const db = getDb();
   if (db) {
@@ -1026,7 +1024,7 @@ app.post("/api/bookings", (req, res) => {
   res.status(201).json(booking);
 });
 
-app.put("/api/bookings/:id", (req, res) => {
+app.put("/api/bookings/:id", validateBookingInput, (req, res) => {
   const bookingIdRaw = String(req.params.id || "").trim();
   const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
   const userEmail = String(req.headers["x-user-email"] || "").trim();
