@@ -1,7 +1,7 @@
 const MAX_BOOKING_MINUTES = 180;
 
 function invalid(res) {
-  return res.status(400).json({ error: "Invalid input" });
+  return res.status(400).json({ message: "Invalid input" });
 }
 
 function isValidDate(dateStr) {
