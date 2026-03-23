@@ -14,8 +14,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const JWT_SECRET = process.env.JWT_SECRET || "demo-secret-key";
+const envJwtSecret = process.env.JWT_SECRET;
+const isProduction = process.env.NODE_ENV === "production";
 
+if (isProduction && !envJwtSecret) {
+  throw new Error("JWT_SECRET environment variable must be set in production.");
+}
+
+const JWT_SECRET = envJwtSecret || "demo-secret-key";
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
