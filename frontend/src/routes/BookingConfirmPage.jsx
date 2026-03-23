@@ -90,7 +90,6 @@ export default function BookingConfirmPage() {
         date,
         start,
         end,
-        userEmail,
         reason: reasonTrimmed,
         userRole,
       })

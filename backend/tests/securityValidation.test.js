@@ -13,6 +13,13 @@ async function anyFacilityId() {
   return res.body.items[0].id
 }
 
+async function getAuthToken(email, role = 'user') {
+  const res = await request(app).post('/__debug/login').send({ email, role })
+  expect(res.status).toBe(200)
+  expect(res.body.token).toBeTruthy()
+  return res.body.token
+}
+
 function toMinutes(hhmm) {
   const [h, m] = String(hhmm).split(':').map(Number)
   if (!Number.isFinite(h) || !Number.isFinite(m)) return null
@@ -51,19 +58,23 @@ async function getFreeOneHourSlot(facilityId, date) {
 
 describe('booking validation and auth negative paths', () => {
   test('create booking rejects missing fields', async () => {
-    const res = await request(app).post('/api/bookings').send({ facilityId: 'R-1' })
+    const token = await getAuthToken('missing.fields@smu.edu.sg', 'student')
+    const res = await request(app)
+      .post('/api/bookings')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ facilityId: 'R-1' })
     expect(res.status).toBe(400)
     expect(res.body.message).toMatch(/missing required booking fields/i)
   })
 
   test('create booking rejects invalid date format', async () => {
     const facilityId = await anyFacilityId()
-    const res = await request(app).post('/api/bookings').send({
+    const token = await getAuthToken('invalid.date@smu.edu.sg', 'student')
+    const res = await request(app).post('/api/bookings').set('Authorization', `Bearer ${token}`).send({
       facilityId,
       date: '20-03-2026',
       start: '10:00',
       end: '11:00',
-      userEmail: 'invalid.date@smu.edu.sg',
       reason: 'validation test',
     })
 
@@ -75,19 +86,20 @@ describe('booking validation and auth negative paths', () => {
     const facilityId = await anyFacilityId()
     const date = futureIso(20)
     const slot = await getFreeOneHourSlot(facilityId, date)
-    const create = await request(app).post('/api/bookings').send({
+    const ownerToken = await getAuthToken('owner.only@smu.edu.sg', 'student')
+    const intruderToken = await getAuthToken('intruder@smu.edu.sg', 'student')
+    const create = await request(app).post('/api/bookings').set('Authorization', `Bearer ${ownerToken}`).send({
       facilityId,
       date,
       start: slot.start,
       end: slot.end,
-      userEmail: 'owner.only@smu.edu.sg',
       reason: 'ownership test',
     })
     expect(create.status).toBe(201)
 
     const update = await request(app)
       .put(`/api/bookings/${create.body.id}`)
-      .set('x-user-email', 'intruder@smu.edu.sg')
+      .set('Authorization', `Bearer ${intruderToken}`)
       .send({ date, start: slot.start, end: slot.end })
 
     expect(update.status).toBe(403)
@@ -97,6 +109,6 @@ describe('booking validation and auth negative paths', () => {
   test('cancel booking requires logged-in user', async () => {
     const res = await request(app).delete('/api/bookings/B-999999')
     expect(res.status).toBe(401)
-    expect(res.body.message).toMatch(/please log in/i)
+    expect(res.body.message).toMatch(/access token required/i)
   })
 })

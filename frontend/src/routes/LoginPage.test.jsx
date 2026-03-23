@@ -2,6 +2,10 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import LoginPage from './LoginPage'
 
 describe('LoginPage', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   test('shows error for invalid credentials', async () => {
     render(<LoginPage onLoginSuccess={vi.fn()} />)
 
@@ -15,6 +19,12 @@ describe('LoginPage', () => {
   })
 
   test('calls onLoginSuccess for valid credentials', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ token: 'token-123' }),
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
     const onLoginSuccess = vi.fn()
     render(<LoginPage onLoginSuccess={onLoginSuccess} />)
 
@@ -23,7 +33,7 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => {
-      expect(onLoginSuccess).toHaveBeenCalledWith({ email: 'test@test.com' })
+      expect(onLoginSuccess).toHaveBeenCalledWith({ email: 'test@test.com', token: 'token-123' })
     })
   })
 })

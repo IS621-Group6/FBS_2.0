@@ -55,6 +55,13 @@ async function getAnyFacilityId() {
   return resp.body.items[0].id;
 }
 
+async function getAuthToken(email, role = "user") {
+  const resp = await request(app).post("/__debug/login").send({ email, role });
+  expect(resp.status).toBe(200);
+  expect(resp.body.token).toBeTruthy();
+  return resp.body.token;
+}
+
 function toMinutes(hhmm) {
   const [h, m] = String(hhmm).split(":").map(Number);
   if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
@@ -125,16 +132,20 @@ describe("Facilities and bookings API integration", () => {
 
   test("create booking succeeds and returns confirmation payload", async () => {
     const facilityId = await getAnyFacilityId();
+    const email = "student.integration@smu.edu.sg";
+    const token = await getAuthToken(email, "student");
     const payload = {
       facilityId,
       date: uniqueFutureDate(),
       start: "09:00",
       end: "10:00",
-      userEmail: "student.integration@smu.edu.sg",
       reason: "Integration test booking",
     };
 
-    const resp = await request(app).post("/api/bookings").set("x-user-role", "student").send(payload);
+    const resp = await request(app)
+      .post("/api/bookings")
+      .set("Authorization", `Bearer ${token}`)
+      .send(payload);
 
     expect(resp.status).toBe(201);
     expect(resp.body).toMatchObject({
@@ -142,7 +153,7 @@ describe("Facilities and bookings API integration", () => {
       date: payload.date,
       start: payload.start,
       end: payload.end,
-      userEmail: payload.userEmail,
+      userEmail: email,
     });
     expect(resp.body.id).toMatch(/^B-\d+$/);
   });
@@ -151,12 +162,12 @@ describe("Facilities and bookings API integration", () => {
     const facilityId = await getAnyFacilityId();
     const date = singaporeTodayIso();
     const slot = await getFreeOneHourSlot(facilityId, date);
-    const resp = await request(app).post("/api/bookings").send({
+    const token = await getAuthToken("same.day@smu.edu.sg", "student");
+    const resp = await request(app).post("/api/bookings").set("Authorization", `Bearer ${token}`).send({
       facilityId,
       date,
       start: slot.start,
       end: slot.end,
-      userEmail: "same.day@smu.edu.sg",
       reason: "Same day booking should be allowed",
     });
 
@@ -167,12 +178,12 @@ describe("Facilities and bookings API integration", () => {
   test("cannot create booking before today (Singapore time)", async () => {
     const facilityId = await getAnyFacilityId();
     const yesterdaySg = isoDateOffsetFrom(singaporeTodayIso(), -1);
-    const resp = await request(app).post("/api/bookings").send({
+    const token = await getAuthToken("past.create@smu.edu.sg", "student");
+    const resp = await request(app).post("/api/bookings").set("Authorization", `Bearer ${token}`).send({
       facilityId,
       date: yesterdaySg,
       start: "10:00",
       end: "11:00",
-      userEmail: "past.create@smu.edu.sg",
       reason: "Past date should be blocked",
     });
 
@@ -183,6 +194,8 @@ describe("Facilities and bookings API integration", () => {
   test("prevent double booking on same facility/date/time", async () => {
     const facilityId = await getAnyFacilityId();
     const date = uniqueFutureDate();
+    const firstToken = await getAuthToken("first.user@smu.edu.sg", "student");
+    const secondToken = await getAuthToken("second.user@smu.edu.sg", "student");
     const slot = {
       facilityId,
       date,
@@ -190,16 +203,14 @@ describe("Facilities and bookings API integration", () => {
       end: "12:00",
     };
 
-    const first = await request(app).post("/api/bookings").send({
+    const first = await request(app).post("/api/bookings").set("Authorization", `Bearer ${firstToken}`).send({
       ...slot,
-      userEmail: "first.user@smu.edu.sg",
       reason: "Create initial booking",
     });
     expect(first.status).toBe(201);
 
-    const second = await request(app).post("/api/bookings").send({
+    const second = await request(app).post("/api/bookings").set("Authorization", `Bearer ${secondToken}`).send({
       ...slot,
-      userEmail: "second.user@smu.edu.sg",
       reason: "Attempt overlap",
     });
 
@@ -209,14 +220,14 @@ describe("Facilities and bookings API integration", () => {
     });
   });
 
-  test("modify booking requires login header", async () => {
+  test("modify booking requires access token", async () => {
     const facilityId = await getAnyFacilityId();
-    const create = await request(app).post("/api/bookings").send({
+    const token = await getAuthToken("needs.auth@smu.edu.sg", "student");
+    const create = await request(app).post("/api/bookings").set("Authorization", `Bearer ${token}`).send({
       facilityId,
       date: uniqueFutureDate(),
       start: "13:00",
       end: "14:00",
-      userEmail: "needs.auth@smu.edu.sg",
       reason: "Create for modify auth test",
     });
     expect(create.status).toBe(201);
@@ -235,13 +246,13 @@ describe("Facilities and bookings API integration", () => {
     const facilityId = await getAnyFacilityId();
     const ownerEmail = "booking.owner@smu.edu.sg";
     const date = uniqueFutureDate();
+    const token = await getAuthToken(ownerEmail, "student");
 
-    const create = await request(app).post("/api/bookings").send({
+    const create = await request(app).post("/api/bookings").set("Authorization", `Bearer ${token}`).send({
       facilityId,
       date,
       start: "15:00",
       end: "16:00",
-      userEmail: ownerEmail,
       reason: "Create for modify success",
     });
     expect(create.status).toBe(201);
@@ -249,7 +260,7 @@ describe("Facilities and bookings API integration", () => {
     const bookingId = create.body.id;
     const modify = await request(app)
       .put(`/api/bookings/${bookingId}`)
-      .set("x-user-email", ownerEmail)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         date,
         start: "16:00",
@@ -272,13 +283,13 @@ describe("Facilities and bookings API integration", () => {
     const futureDate = isoDateOffsetFrom(singaporeTodayIso(), 2);
     const pastDate = isoDateOffsetFrom(singaporeTodayIso(), -1);
     const slot = await getFreeOneHourSlot(facilityId, futureDate);
+    const token = await getAuthToken(ownerEmail, "student");
 
-    const create = await request(app).post("/api/bookings").send({
+    const create = await request(app).post("/api/bookings").set("Authorization", `Bearer ${token}`).send({
       facilityId,
       date: futureDate,
       start: slot.start,
       end: slot.end,
-      userEmail: ownerEmail,
       reason: "Create for past-date modify test",
     });
     expect(create.status).toBe(201);
@@ -286,7 +297,7 @@ describe("Facilities and bookings API integration", () => {
     const bookingId = create.body.id;
     const modify = await request(app)
       .put(`/api/bookings/${bookingId}`)
-      .set("x-user-email", ownerEmail)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         date: pastDate,
         start: "10:00",
@@ -300,13 +311,13 @@ describe("Facilities and bookings API integration", () => {
   test("cancel booking returns cancellation confirmation", async () => {
     const facilityId = await getAnyFacilityId();
     const ownerEmail = "cancel.owner@smu.edu.sg";
+    const token = await getAuthToken(ownerEmail, "student");
 
-    const create = await request(app).post("/api/bookings").send({
+    const create = await request(app).post("/api/bookings").set("Authorization", `Bearer ${token}`).send({
       facilityId,
       date: uniqueFutureDate(),
       start: "09:30",
       end: "10:30",
-      userEmail: ownerEmail,
       reason: "Create for cancellation",
     });
     expect(create.status).toBe(201);
@@ -314,7 +325,7 @@ describe("Facilities and bookings API integration", () => {
     const bookingId = create.body.id;
     const cancel = await request(app)
       .delete(`/api/bookings/${bookingId}`)
-      .set("x-user-email", ownerEmail);
+      .set("Authorization", `Bearer ${token}`);
 
     expect(cancel.status).toBe(200);
     expect(cancel.body).toMatchObject({
@@ -330,18 +341,18 @@ describe("Facilities and bookings API integration", () => {
   test("bookings list can be scoped by x-user-email", async () => {
     const facilityId = await getAnyFacilityId();
     const targetEmail = "scoped.user@smu.edu.sg";
+    const token = await getAuthToken(targetEmail, "student");
 
-    const create = await request(app).post("/api/bookings").send({
+    const create = await request(app).post("/api/bookings").set("Authorization", `Bearer ${token}`).send({
       facilityId,
       date: uniqueFutureDate(),
       start: "12:00",
       end: "13:00",
-      userEmail: targetEmail,
       reason: "Create for bookings list scope",
     });
     expect(create.status).toBe(201);
 
-    const list = await request(app).get("/api/bookings").set("x-user-email", targetEmail);
+    const list = await request(app).get("/api/bookings").set("Authorization", `Bearer ${token}`);
     expect(list.status).toBe(200);
     expect(Array.isArray(list.body.items)).toBe(true);
     expect(list.body.items.length).toBeGreaterThan(0);
@@ -351,13 +362,13 @@ describe("Facilities and bookings API integration", () => {
   test("real-time availability shows booked slot", async () => {
     const facilityId = await getAnyFacilityId();
     const date = uniqueFutureDate();
+    const token = await getAuthToken("availability.user@smu.edu.sg", "student");
 
-    const create = await request(app).post("/api/bookings").send({
+    const create = await request(app).post("/api/bookings").set("Authorization", `Bearer ${token}`).send({
       facilityId,
       date,
       start: "18:00",
       end: "19:00",
-      userEmail: "availability.user@smu.edu.sg",
       reason: "Create for availability",
     });
     expect(create.status).toBe(201);

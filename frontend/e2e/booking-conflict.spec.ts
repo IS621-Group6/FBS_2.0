@@ -19,6 +19,18 @@ function hhmm(total: number) {
 }
 
 test('backend rejects a second booking for the same slot', async ({ request }) => {
+  const firstLogin = await request.post('http://127.0.0.1:3001/__debug/login', {
+    data: { email: 'e2e.first@smu.edu.sg', role: 'student' },
+  })
+  expect(firstLogin.ok()).toBeTruthy()
+  const firstToken = (await firstLogin.json()).token
+
+  const secondLogin = await request.post('http://127.0.0.1:3001/__debug/login', {
+    data: { email: 'e2e.second@smu.edu.sg', role: 'student' },
+  })
+  expect(secondLogin.ok()).toBeTruthy()
+  const secondToken = (await secondLogin.json()).token
+
   const facilities = await request.get('http://127.0.0.1:3001/api/facilities?pageSize=1')
   expect(facilities.ok()).toBeTruthy()
   const facilityPayload = await facilities.json()
@@ -53,12 +65,14 @@ test('backend rejects a second booking for the same slot', async ({ request }) =
   }
 
   const first = await request.post('http://127.0.0.1:3001/api/bookings', {
-    data: { ...payload, userEmail: 'e2e.first@smu.edu.sg' },
+    headers: { Authorization: `Bearer ${firstToken}` },
+    data: payload,
   })
   expect(first.status()).toBe(201)
 
   const second = await request.post('http://127.0.0.1:3001/api/bookings', {
-    data: { ...payload, userEmail: 'e2e.second@smu.edu.sg' },
+    headers: { Authorization: `Bearer ${secondToken}` },
+    data: payload,
   })
 
   expect(second.status()).toBe(409)
