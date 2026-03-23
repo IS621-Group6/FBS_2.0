@@ -1,80 +1,32 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { getDb, sqliteHealth } = require("./sqlite");
-const rateLimit = require("express-rate-limit");
-
-// helpers for real-time cost/credit snapshots
-const { deductCredits, getCostCentre } = require("./finance");
-const { formatBookingConfirmation } = require("./emailTemplates");
-
-const compression = require("compression");
-const NodeCache = require("node-cache");
 
 const app = express();
-const globalLimiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
-  max: Number(process.env.RATE_LIMIT_GLOBAL) || 100,
-
-  standardHeaders: true,
-  legacyHeaders: false,
-
-  handler: (req, res) => {
-    console.warn(
-      `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
-    );
-
-    res.status(429).json({
-      error: "Too many requests. Please try again later."
-    });
-  }
-});
-
-const searchLimiter = rateLimit({
-  windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
-  max: Number(process.env.RATE_LIMIT_SEARCH) || 20,
-
-  standardHeaders: true,
-  legacyHeaders: false,
-
-  handler: (req, res) => {
-    console.warn(
-      `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
-    );
-
-    res.status(429).json({
-      error: "Too many search requests. Please slow down."
-    });
-  }
-});
-
-const searchCache = new NodeCache({ stdTTL: 60 });
-
-app.use(compression());
-
-app.use((req, res, next) => {
-  const start = Date.now();
-
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    console.log(`${req.method} ${req.originalUrl} ${duration}ms`);
-  });
-
-  next();
-});
-
 app.use(cors());
 app.use(express.json());
 
-// Apply global rate limiter to all routes except GET /api/facilities,
-// which has its own dedicated search limiter.
-function globalLimiterUnlessSearch(req, res, next) {
-  if (req.method === "GET" && req.path === "/api/facilities") {
-    return next();
+const JWT_SECRET = process.env.JWT_SECRET || "demo-secret-key";
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: 'Access token required' });
   }
-  return globalLimiter(req, res, next);
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expired' });
+      }
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
 }
 
-app.use(globalLimiterUnlessSearch);
 function pad2(n) {
   return String(n).padStart(2, "0");
 }
@@ -190,14 +142,7 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, service: "smu-fbs", time: new Date().toISOString(), db });
 });
 
-app.get("/api/facilities", searchLimiter, async (req, res) => {
-  const cacheKey = JSON.stringify(req.query);
-
-  const cachedResult = searchCache.get(cacheKey);
-
-  if (cachedResult) {
-    return res.json(cachedResult);
-  }
+app.get("/api/facilities", async (req, res) => {
   const q = String(req.query.q || "").trim().toLowerCase();
   const minCapacity = Number(req.query.minCapacity || 0) || 0;
   const equipment = String(req.query.equipment || "")
@@ -262,8 +207,6 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
       const safePage = Math.min(page, pageCount);
       const startIdx = (safePage - 1) * pageSize;
       const slice = items.slice(startIdx, startIdx + pageSize);
-
-      searchCache.set(cacheKey, { items: slice, total, page: safePage, pageSize, pageCount });
 
       res.json({ items: slice, total, page: safePage, pageSize, pageCount });
       return;
@@ -526,73 +469,9 @@ app.get("/api/availability-glimpse", (req, res) => {
   res.json({ date, duration, items });
 });
 
-app.get("/api/bookings", (req, res) => {
-  const userEmail = String(req.query.userEmail || req.headers["x-user-email"] || "").trim();
-
-  const db = getDb();
-  if (db) {
-    try {
-      const rows = db
-        .prepare(
-          `SELECT b.booking_id,
-                  b.status,
-                  b.booking_reason,
-                  u.email AS user_email,
-                  f.facility_code,
-                  f.facility_name,
-                  substr(bd.start_time, 1, 10) AS booking_date,
-                  substr(bd.start_time, 12, 5) AS start_time,
-                  substr(bd.end_time, 12, 5) AS end_time
-           FROM bookings b
-           JOIN users u ON u.user_id = b.user_id
-           JOIN booking_detail bd ON bd.booking_id = b.booking_id
-           JOIN facilities f ON f.facility_id = bd.facility_id
-           WHERE (? = '' OR lower(u.email) = lower(?))
-           ORDER BY bd.start_time DESC, b.booking_id DESC`
-        )
-        .all(userEmail, userEmail);
-
-      const items = rows.map((row) => ({
-        id: `B-${row.booking_id}`,
-        facilityId: row.facility_code,
-        facilityName: row.facility_name,
-        date: row.booking_date,
-        start: row.start_time,
-        end: row.end_time,
-        userEmail: row.user_email,
-        reason: row.booking_reason || undefined,
-        status: String(row.status || "CONFIRMED").toLowerCase(),
-      }));
-
-      res.json({ items });
-      return;
-    } catch (e) {
-      res.status(500).json({ message: e?.message || "Failed to load bookings" });
-      return;
-    }
-  }
-
-  const items = BOOKINGS
-    .filter((booking) => !userEmail || String(booking.userEmail).toLowerCase() === userEmail.toLowerCase())
-    .map((booking) => ({
-      id: booking.id,
-      facilityId: booking.facilityId,
-      date: booking.date,
-      start: booking.start,
-      end: booking.end,
-      userEmail: booking.userEmail,
-      reason: booking.reason,
-      status: booking.status || "active",
-    }))
-    .sort((a, b) => `${b.date} ${b.start}`.localeCompare(`${a.date} ${a.start}`));
-
-  res.json({ items });
-});
-
-app.post("/api/bookings", (req, res) => {
-  const { facilityId, date, start, end, userEmail, reason } = req.body || {};
-  // role may come from a header or the body; default to student for sanity
-  const userRole = String(req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
+app.post("/api/bookings", authenticateToken, (req, res) => {
+  const { facilityId, date, start, end, reason } = req.body || {};
+  const userEmail = req.user.email;
 
   if (!facilityId || !date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
@@ -640,7 +519,7 @@ app.post("/api/bookings", (req, res) => {
         return;
       }
 
-      const email = String(userEmail || "guest@smu.edu.sg").trim().toLowerCase();
+      const email = String(userEmail || "guest@smu.edu.sg").trim();
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
 
       const tx = db.transaction(() => {
@@ -672,18 +551,7 @@ app.post("/api/bookings", (req, res) => {
       });
 
       const bookingId = tx();
-      // compute role‑aware financial snapshot
-      let extra = {};
-      if (userRole === "student") {
-        // for demo every booking costs 100 credits
-        const { deducted, remaining } = deductCredits(email, 100);
-        extra = { deducted, creditsRemaining: remaining };
-      } else if (userRole === "staff") {
-        extra.costCentre = getCostCentre(email);
-      }
-      const emailBody = formatBookingConfirmation(userRole, extra);
-      console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole });
-
+      db.prepare(`INSERT INTO audit_logs (action, user_email, booking_id, details) VALUES (?, ?, ?, ?)`).run('CREATE', email, bookingId, JSON.stringify({ facilityId, date, start, end, reason: reasonTrimmed }));
       res.status(201).json({
         id: `B-${bookingId}`,
         facilityId,
@@ -692,7 +560,6 @@ app.post("/api/bookings", (req, res) => {
         end,
         userEmail: email,
         reason: reasonTrimmed || undefined,
-        ...extra,
       });
       return;
     } catch (e) {
@@ -732,332 +599,150 @@ app.post("/api/bookings", (req, res) => {
     return;
   }
 
-  const email = String(userEmail || "unknown@smu.edu.sg").trim().toLowerCase();
-
   const booking = {
     id: nextBookingId(),
     facilityId,
     date,
     start,
     end,
-    userEmail: email,
+    userEmail: userEmail || "unknown@smu.edu.sg",
     status: "active",
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
   };
 
   BOOKINGS.push(booking);
-  // compute extras for in-memory case
-  let extra = {};
-  if (userRole === "student") {
-    const { deducted, remaining } = deductCredits(email, 100);
-    extra = { deducted, creditsRemaining: remaining };
-  } else if (userRole === "staff") {
-    extra.costCentre = getCostCentre(email);
-  }
-  const emailBody = formatBookingConfirmation(userRole, extra);
-  console.log("SEND_EMAIL", { bookingId: booking.id, userRole });
-
-  res.status(201).json({ ...booking, ...extra });
-});
-
-app.put("/api/bookings/:id", (req, res) => {
-  const bookingIdRaw = String(req.params.id || "").trim();
-  const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
-  const userEmail = String(req.headers["x-user-email"] || "").trim();
-  const { date, start, end } = req.body || {};
-
-  if (!userEmail) {
-    res.status(401).json({ message: "Please log in to modify bookings." });
-    return;
-  }
-
-  if (!date || !start || !end) {
-    res.status(400).json({ message: "Missing required booking fields" });
-    return;
-  }
-
-  const startMin = toMinutes(start);
-  const endMin = toMinutes(end);
-  if (startMin === null || endMin === null || endMin <= startMin) {
-    res.status(400).json({ message: "Invalid time range" });
-    return;
-  }
-
-  const db = getDb();
-  if (db) {
-    try {
-      if (!Number.isFinite(bookingIdNumeric) || bookingIdNumeric <= 0) {
-        res.status(400).json({ message: "Invalid booking id." });
-        return;
-      }
-
-      const bookingRow = db
-        .prepare(
-          `SELECT b.booking_id,
-                  b.status,
-                  u.email AS user_email,
-                  f.facility_code,
-                  f.facility_name,
-                  bd.facility_id AS facility_db_id
-           FROM bookings b
-           JOIN users u ON u.user_id = b.user_id
-           JOIN booking_detail bd ON bd.booking_id = b.booking_id
-           JOIN facilities f ON f.facility_id = bd.facility_id
-           WHERE b.booking_id = ?`
-        )
-        .get(bookingIdNumeric);
-
-      if (!bookingRow) {
-        res.status(404).json({ message: "Booking not found." });
-        return;
-      }
-
-      if (String(bookingRow.user_email).toLowerCase() !== userEmail.toLowerCase()) {
-        res.status(403).json({ message: "Unauthorised: cannot modify another user's booking." });
-        return;
-      }
-
-      if (String(bookingRow.status || "").toLowerCase() === "cancelled") {
-        res.status(400).json({ message: "Cancelled bookings cannot be modified." });
-        return;
-      }
-
-      const startTs = `${date} ${start}:00`;
-      const endTs = `${date} ${end}:00`;
-
-      const conflict = db
-        .prepare(
-          `SELECT bd.booking_id AS id,
-                  substr(bd.start_time, 12, 5) AS start,
-                  substr(bd.end_time, 12, 5) AS end
-           FROM booking_detail bd
-           JOIN bookings b ON b.booking_id = bd.booking_id
-           WHERE bd.facility_id = ?
-             AND bd.booking_id <> ?
-             AND lower(ifnull(b.status, 'confirmed')) <> 'cancelled'
-             AND bd.start_time < ?
-             AND bd.end_time   > ?
-           LIMIT 1`
-        )
-        .get(Number(bookingRow.facility_db_id), bookingIdNumeric, endTs, startTs);
-
-      if (conflict) {
-        res.status(409).json({
-          error: "DOUBLE_BOOKING",
-          message: "This timeslot is already booked.",
-          conflict: { id: conflict.id, start: conflict.start, end: conflict.end },
-        });
-        return;
-      }
-
-      // In SQLite, updating booking_detail rows by booking_id alone can cause
-      // UNIQUE/PK conflicts when a booking has multiple segments for the same
-      // facility. Use a small transaction that replaces existing rows for this
-      // booking and facility with a single new row covering the requested time.
-      // Use db.transaction(...) here for consistent and automatic rollback behavior.
-      const replaceBookingSegments = db.transaction(
-        (bookingId, facilityId, startTime, endTime) => {
-          db.prepare(
-            `DELETE FROM booking_detail
-               WHERE booking_id = ?
-                 AND facility_id = ?`
-          ).run(bookingId, facilityId);
-
-          db.prepare(
-            `INSERT INTO booking_detail (booking_id, facility_id, start_time, end_time)
-               VALUES (?, ?, ?, ?)`
-          ).run(bookingId, facilityId, startTime, endTime);
-        }
-      );
-
-      replaceBookingSegments(
-        bookingIdNumeric,
-        bookingRow.facility_db_id,
-        startTs,
-        endTs
-      );
-      res.json({
-        id: `B-${bookingIdNumeric}`,
-        facilityId: bookingRow.facility_code,
-        facilityName: bookingRow.facility_name,
-        date,
-        start,
-        end,
-        userEmail: bookingRow.user_email,
-        status: String(bookingRow.status || "confirmed").toLowerCase(),
-      });
-      return;
-    } catch (e) {
-      res.status(500).json({ message: e?.message || "Unable to modify booking." });
-      return;
-    }
-  }
-
-  const bookingIdString = String(bookingIdRaw);
-  const bookingIdCore = bookingIdString.replace(/^B-/i, "");
-  const normalizedBookingId = `B-${bookingIdCore}`;
-
-  const booking = BOOKINGS.find(
-    (b) => b.id === bookingIdString || b.id === normalizedBookingId
-  );
-
-  if (!booking) {
-    res.status(404).json({ message: "Booking not found." });
-    return;
-  }
-
-  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
-    res.status(403).json({ message: "Unauthorised: cannot modify another user's booking." });
-    return;
-  }
-
-  if (String(booking.status || "").toLowerCase() === "cancelled") {
-    res.status(400).json({ message: "Cancelled bookings cannot be modified." });
-    return;
-  }
-
-  const conflict = BOOKINGS.find((b) => {
-    if (b.id === booking.id) return false;
-    if (String(b.status || "active").toLowerCase() === "cancelled") return false;
-    if (b.facilityId !== booking.facilityId) return false;
-    if (b.date !== date) return false;
-
-    const bStart = toMinutes(b.start);
-    const bEnd = toMinutes(b.end);
-    return overlaps(startMin, endMin, bStart, bEnd);
-  });
-
-  if (conflict) {
-    res.status(409).json({
-      error: "DOUBLE_BOOKING",
-      message: "This timeslot is already booked.",
-      conflict: { id: conflict.id, start: conflict.start, end: conflict.end },
-    });
-    return;
-  }
-
-  booking.date = date;
-  booking.start = start;
-  booking.end = end;
-
-  res.json({
-    id: booking.id,
-    facilityId: booking.facilityId,
-    date: booking.date,
-    start: booking.start,
-    end: booking.end,
+  console.log("BOOKING_CREATED", {
+    bookingId: booking.id,
     userEmail: booking.userEmail,
-    status: booking.status || "active",
-    reason: booking.reason,
+    timestamp: new Date().toISOString(),
+    details: { facilityId: booking.facilityId, date: booking.date, start: booking.start, end: booking.end, reason: booking.reason }
   });
+  res.status(201).json(booking);
 });
 
-app.delete("/api/bookings/:id", (req, res) => {
-  const bookingIdRaw = String(req.params.id || "").trim();
-  const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
-  const userEmail = String(req.headers["x-user-email"] || "").trim();
-
-  if (!userEmail) {
-    res.status(401).json({ message: "Please log in to cancel bookings." });
-    return;
-  }
+app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
+  const bookingId = req.params.id
+  const userEmail = req.user.email
 
   const db = getDb();
   if (db) {
     try {
-      if (!Number.isFinite(bookingIdNumeric) || bookingIdNumeric <= 0) {
-        res.status(400).json({ message: "Invalid booking id." });
-        return;
-      }
-
-      const bookingRow = db
-        .prepare(
-          `SELECT b.booking_id,
-                  b.status,
-                  u.email AS user_email
-           FROM bookings b
-           JOIN users u ON u.user_id = b.user_id
-           WHERE b.booking_id = ?`
-        )
-        .get(bookingIdNumeric);
-
+      const numericId = Number(bookingId.slice(2));
+      const bookingRow = db.prepare(`SELECT b.*, u.email FROM bookings b JOIN users u ON b.user_id = u.user_id WHERE b.booking_id = ?`).get(numericId);
       if (!bookingRow) {
         res.status(404).json({ message: "Booking not found." });
         return;
       }
 
-      if (String(bookingRow.user_email).toLowerCase() !== userEmail.toLowerCase()) {
+      if (bookingRow.email !== userEmail) {
         res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
         return;
       }
 
-      if (String(bookingRow.status || "").toLowerCase() === "cancelled") {
+      if (bookingRow.status === 'CANCELLED') {
         res.json({ message: "This booking is already cancelled." });
         return;
       }
 
-      db.prepare(`UPDATE bookings SET status = 'cancelled' WHERE booking_id = ?`).run(bookingIdNumeric);
-
-      console.log("BOOKING_CANCELLED", {
-        bookingId: `B-${bookingIdNumeric}`,
-        userEmail,
-        timestamp: new Date().toISOString(),
-      });
-
-      res.json({
-        message: "Booking cancelled successfully.",
-        booking: {
-          id: `B-${bookingIdNumeric}`,
-          userEmail,
-          status: "cancelled",
-        },
-      });
+      db.prepare(`UPDATE bookings SET status = 'CANCELLED' WHERE booking_id = ?`).run(numericId);
+      db.prepare(`INSERT INTO audit_logs (action, user_email, booking_id, details) VALUES (?, ?, ?, ?)`).run('CANCEL', userEmail, numericId, JSON.stringify({ bookingId }));
+      res.json({ message: "Booking cancelled successfully." });
       return;
     } catch (e) {
-      res.status(500).json({ message: e?.message || "Cancellation failed." });
-      return;
+      console.error("Error cancelling booking in DB:", e);
     }
   }
 
-  const bookingIdString = String(bookingIdRaw);
-  const normalizedBookingId = bookingIdString.startsWith("B-")
-    ? bookingIdString
-    : `B-${bookingIdString}`;
+  const bookingIndex = BOOKINGS.findIndex((b) => b.id === bookingId)
 
-  const bookingIndex = BOOKINGS.findIndex(
-    (b) => b.id === bookingIdString || b.id === normalizedBookingId
-  );
   if (bookingIndex === -1) {
-    res.status(404).json({ message: "Booking not found." });
-    return;
+    res.status(404).json({ message: "Booking not found." })
+    return
   }
 
-  const booking = BOOKINGS[bookingIndex];
+  const booking = BOOKINGS[bookingIndex]
 
-  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
-    res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
-    return;
+  // AC2 — user must own the booking
+  if (booking.userEmail !== userEmail) {
+    res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." })
+    return
   }
 
+  // AC6 — idempotent cancellation
   if (booking.status === "cancelled") {
-    res.json({ message: "This booking is already cancelled." });
-    return;
+    res.json({ message: "This booking is already cancelled." })
+    return
   }
 
-  booking.status = "cancelled";
+  // AC3 + AC4 — mark cancelled and free slot
+  booking.status = "cancelled"
 
+  // AC8 — audit logging
   console.log("BOOKING_CANCELLED", {
-    bookingId: bookingIdRaw,
+    bookingId,
     userEmail,
     timestamp: new Date().toISOString(),
-  });
+  })
 
-  res.json({ message: "Booking cancelled successfully.", booking });
+  res.json({ message: "Booking cancelled successfully.", booking })
 })
+
+app.get("/api/admin/logs", authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  const db = getDb();
+  if (!db) {
+    res.status(500).json({ message: "Database not available" });
+    return;
+  }
+
+  try {
+    const action = req.query.action;
+    const userEmail = req.query.user_email;
+    const startDate = req.query.start_date;
+    const endDate = req.query.end_date;
+
+    let where = [];
+    let params = [];
+    if (action) {
+      where.push("action = ?");
+      params.push(action);
+    }
+    if (userEmail) {
+      where.push("user_email = ?");
+      params.push(userEmail);
+    }
+    if (startDate) {
+      where.push("timestamp >= ?");
+      params.push(startDate + 'T00:00:00Z');
+    }
+    if (endDate) {
+      where.push("timestamp <= ?");
+      params.push(endDate + 'T23:59:59Z');
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = db.prepare(`SELECT * FROM audit_logs ${whereSql} ORDER BY timestamp DESC`).all(...params);
+
+    res.json({ logs: rows });
+  } catch (e) {
+    res.status(500).json({ message: e.message });
+  }
+});
 
 app.delete("/__debug/delete-test", (req, res) => {
   res.json({ ok: true, method: "DELETE" })
 })
+
+app.post("/__debug/login", (req, res) => {
+  const { email, role } = req.body || {};
+  if (!email) {
+    return res.status(400).json({ message: "Email required" });
+  }
+  const token = jwt.sign({ email, role: role || 'user' }, JWT_SECRET, { expiresIn: '1h' });
+  res.json({ token });
+});
 
 app.get("/", (req, res) => {
   res.send("FBS 2.0 backend running");
@@ -1065,11 +750,6 @@ app.get("/", (req, res) => {
 
 app.get("/__debug/routes", (req, res) => res.json({ ok: true }));
 
-if (require.main === module) {
-  app.listen(3001, () => {
-    console.log("Backend running on port 3001");
-  });
-} else {
-  // when the file is required (e.g. from tests) we just export the app
-  module.exports = app;
-}
+app.listen(3001, () => {
+  console.log("Backend running on port 3001");
+});
