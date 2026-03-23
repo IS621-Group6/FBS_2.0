@@ -1388,7 +1388,8 @@ app.get("/api/admin/logs", authenticateToken, (req, res) => {
 
     res.json({ logs: rows });
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    console.error("Error fetching admin logs:", e);
+    res.status(500).json({ message: "Failed to fetch logs" });
   }
 });
 
