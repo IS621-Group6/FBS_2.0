@@ -1274,7 +1274,17 @@ app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
   const db = getDb();
   if (db) {
     try {
-      const numericId = Number(bookingId.slice(2));
+      let numericId;
+      if (typeof bookingId === "string" && bookingId.startsWith("B-")) {
+        numericId = Number(bookingId.slice(2));
+      } else {
+        numericId = Number(bookingId);
+      }
+
+      if (!Number.isFinite(numericId) || numericId <= 0) {
+        res.status(400).json({ message: "Invalid booking ID." });
+        return;
+      }
       const bookingRow = db.prepare(`SELECT b.*, u.email FROM bookings b JOIN users u ON b.user_id = u.user_id WHERE b.booking_id = ?`).get(numericId);
       if (!bookingRow) {
         res.status(404).json({ message: "Booking not found." });
