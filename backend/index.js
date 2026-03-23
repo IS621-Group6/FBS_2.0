@@ -946,7 +946,7 @@ app.post("/api/bookings", validateBookingInput, (req, res) => {
         return;
       }
 
-      const email = String(userEmail || "guest@smu.edu.sg").trim();
+      const email = String(userEmail || "guest@smu.edu.sg").trim().toLowerCase();
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
 
       const tx = db.transaction(() => {
