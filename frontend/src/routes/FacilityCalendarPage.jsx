@@ -1,10 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
-import BookingProgressBar from '../components/BookingProgressBar'
 import CalendarGrid from '../components/CalendarGrid'
 import { getAvailability, getFacility } from '../lib/api'
 import { isoToday, overlaps, parseTimeToMinutes } from '../lib/time'
+
+const MAX_BOOKING_MINUTES = 180
+
+function formatDurationLabel(totalMinutes) {
+  const m = Number(totalMinutes)
+  if (!Number.isFinite(m) || m <= 0) return ''
+  const h = Math.floor(m / 60)
+  const r = m % 60
+  if (h === 0) return `${r} min`
+  if (r === 0) return h === 1 ? '1 hour' : `${h} hours`
+  return `${h} hour ${r} min`
+}
 
 export default function FacilityCalendarPage() {
   const { id } = useParams()
@@ -35,6 +46,24 @@ export default function FacilityCalendarPage() {
     const mm = String(endMin % 60).padStart(2, '0')
     return `${hh}:${mm}`
   }, [selectedStart, duration])
+
+  const durationOptions = useMemo(() => {
+    const startMin = parseTimeToMinutes(selectedStart)
+    const max = startMin === null ? MAX_BOOKING_MINUTES : Math.min(MAX_BOOKING_MINUTES, Math.max(30, 24 * 60 - startMin))
+    const out = []
+    for (let m = 30; m <= max; m += 30) out.push(m)
+    return out
+  }, [selectedStart])
+
+  useEffect(() => {
+    if (!durationOptions.length) return
+    const max = durationOptions[durationOptions.length - 1]
+    if (!Number.isFinite(duration) || duration < 30) {
+      setDuration(60)
+      return
+    }
+    if (duration > max) setDuration(max)
+  }, [duration, durationOptions])
 
   const hasOverlap = useMemo(() => {
     const startMin = parseTimeToMinutes(selectedStart)
@@ -103,18 +132,10 @@ export default function FacilityCalendarPage() {
     navigate(`/booking/confirm?${confirmSp.toString()}`)
   }
 
-  const handleProgressBarClick = (stepNumber) => {
-    if (stepNumber === 1) {
-      navigate(searchContext ? `/search?${searchContext}` : '/search')
-    }
-  }
-
   return (
     <AppShell>
       <div className="container" style={{ paddingBottom: '200px' }}>
         <div className="stack">
-          <BookingProgressBar currentStep={2} onStepClick={handleProgressBarClick} />
-
           <div>
             <h1 className="h1">Availability</h1>
             <div className="muted">
@@ -160,11 +181,11 @@ export default function FacilityCalendarPage() {
                 <div className="field">
                   <div className="label">Duration</div>
                   <select className="select" value={duration} onChange={(e) => setDuration(Number(e.target.value))}>
-                    <option value={60}>1 hour</option>
-                    <option value={90}>1 hour 30 min</option>
-                    <option value={120}>2 hours</option>
-                    <option value={150}>2 hours 30 min</option>
-                    <option value={180}>3 hours</option>
+                    {durationOptions.map((m) => (
+                      <option key={m} value={m}>
+                        {formatDurationLabel(m)}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -207,6 +228,7 @@ export default function FacilityCalendarPage() {
                   selectedStart={selectedStart}
                   selectedDuration={duration}
                   onSelectStart={setSelectedStart}
+                  businessHours={{ start: '00:00', end: '24:00' }}
                 />
               )}
             </section>

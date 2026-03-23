@@ -7,7 +7,6 @@ import FacilityCalendarPage from './routes/FacilityCalendarPage'
 import BookingConfirmPage from './routes/BookingConfirmPage'
 import BookingResultPage from './routes/BookingResultPage'
 import ViewBookingsPage from './routes/ViewBookingsPage'
-import BookingPage from './routes/BookingPage'
 import AuthProvider from './lib/AuthProvider'
 import useAuth from './lib/useAuth'
 
@@ -23,14 +22,13 @@ function AuthedApp() {
   const { user, login } = useAuth()
 
   if (!user) {
-    return <LoginPage onLoginSuccess={({ email }) => login(email)} />
+    return <LoginPage onLoginSuccess={({ email, token }) => login(email, token)} />
   }
 
   return (
     <Routes>
       <Route path="/" element={<SearchPage />} />
       <Route path="/search" element={<SearchPage />} />
-      <Route path="/booking/new" element={<BookingPage />} />
       <Route path="/facility/:id" element={<FacilityDetailPage />} />
       <Route path="/facility/:id/calendar" element={<FacilityCalendarPage />} />
       <Route path="/booking/confirm" element={<BookingConfirmPage />} />

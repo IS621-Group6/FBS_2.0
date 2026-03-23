@@ -4,7 +4,20 @@ import AppShell from '../components/AppShell'
 import { isoToday } from '../lib/time'
 
 const CAMPUSES = ['Main Campus', 'Downtown Campus', 'Law Campus', 'Innovation District']
-const EQUIPMENT = ['Projector', 'Whiteboard', 'Video Conferencing', 'Microphone', 'PC Lab']
+const EQUIPMENT = [
+  'Classroom PC',
+  'Classroom Prompter',
+  'Clip-on Mic',
+  'DVD Player',
+  'Handheld Mic',
+  'Hybrid (USB connection)',
+  'In-room VC System',
+  'Projector',
+  'TV Panel',
+  'USB Connection VC room',
+  'Video Recording',
+  'Wireless Projection',
+]
 
 export default function DashboardPage() {
   const navigate = useNavigate()

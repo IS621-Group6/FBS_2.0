@@ -1,10 +1,18 @@
+import { getStoredUser } from './auth'
+
+function getAuthHeaders() {
+  const token = getStoredUser()?.token
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 async function request(path, { method = 'GET', body, headers } = {}) {
   const res = await fetch(path, {
     method,
-   headers: {
-  ...(body ? { 'Content-Type': 'application/json' } : {}),
-  ...(headers || {}),
-},
+    headers: {
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...getAuthHeaders(),
+      ...(headers || {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   })
 
@@ -25,6 +33,10 @@ async function request(path, { method = 'GET', body, headers } = {}) {
 
 export function getHealth() {
   return request('/api/health')
+}
+
+export function getFilters() {
+  return request('/api/filters')
 }
 
 export function searchFacilities(params) {
@@ -58,9 +70,8 @@ export function createBooking(payload) {
   return request('/api/bookings', { method: 'POST', body: payload })
 }
 
-export function getBookings(userEmail) {
-  const headers = userEmail ? { 'x-user-email': userEmail } : undefined
-  return request('/api/bookings', { headers })
+export function getBookings() {
+  return request('/api/bookings')
 }
 export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }) {
   const sp = new URLSearchParams()
@@ -72,17 +83,15 @@ export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }
   return request(`/api/availability-glimpse?${sp.toString()}`)
 }
 
-export function cancelBooking(id, userEmail) {
+export function cancelBooking(id) {
   return request(`/api/bookings/${encodeURIComponent(id)}`, {
     method: 'DELETE',
-    headers: { 'x-user-email': userEmail },
   })
 }
 
-export function modifyBooking(id, payload, userEmail) {
+export function modifyBooking(id, payload) {
   return request(`/api/bookings/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body: payload,
-    headers: { 'x-user-email': userEmail },
   })
 }

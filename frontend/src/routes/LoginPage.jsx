@@ -17,10 +17,23 @@ export default function LoginPage({ onLoginSuccess }) {
 
     try {
       if (email === 'test@test.com' && password === 'password') {
-        onLoginSuccess({ email })
+        const response = await fetch('/__debug/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, role: 'user' }),
+        })
+
+        const payload = await response.json().catch(() => null)
+        if (!response.ok || !payload?.token) {
+          throw new Error(payload?.message || 'Unable to sign in.')
+        }
+
+        onLoginSuccess({ email, token: payload.token })
       } else {
         setError('Invalid email or password.')
       }
+    } catch (err) {
+      setError(err?.message || 'Unable to sign in.')
     } finally {
       setIsLoading(false)
     }
