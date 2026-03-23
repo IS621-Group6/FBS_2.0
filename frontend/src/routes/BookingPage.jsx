@@ -175,7 +175,6 @@ export default function BookingPage() {
         date: selectedDate,
         start: selectedStart,
         end: selectedEnd,
-        userEmail,
         reason: selectedReason.trim(),
       })
       navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`)

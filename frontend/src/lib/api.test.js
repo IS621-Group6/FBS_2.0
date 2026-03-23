@@ -1,7 +1,13 @@
 import { createBooking, getBookings } from './api'
+import { clearStoredUser, storeUser } from './auth'
 
 describe('api request helpers', () => {
+  beforeEach(() => {
+    clearStoredUser()
+  })
+
   test('createBooking sends json body and method', async () => {
+    storeUser('test@test.com', 'token-123')
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       headers: { get: () => 'application/json' },
@@ -10,17 +16,18 @@ describe('api request helpers', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    await createBooking({ facilityId: 'R-1', date: '2026-03-20', start: '10:00', end: '11:00', userEmail: 'test@test.com' })
+    await createBooking({ facilityId: 'R-1', date: '2026-03-20', start: '10:00', end: '11:00' })
 
     expect(fetchMock).toHaveBeenCalledWith('/api/bookings', expect.objectContaining({
       method: 'POST',
-      headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
+      headers: expect.objectContaining({ 'Content-Type': 'application/json', Authorization: 'Bearer token-123' }),
     }))
 
     vi.unstubAllGlobals()
   })
 
-  test('getBookings includes x-user-email header', async () => {
+  test('getBookings includes bearer token header', async () => {
+    storeUser('student@smu.edu.sg', 'token-abc')
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       headers: { get: () => 'application/json' },
@@ -29,11 +36,11 @@ describe('api request helpers', () => {
     })
     vi.stubGlobal('fetch', fetchMock)
 
-    await getBookings('student@smu.edu.sg')
+    await getBookings()
 
     expect(fetchMock).toHaveBeenCalledWith('/api/bookings', expect.objectContaining({
       method: 'GET',
-      headers: expect.objectContaining({ 'x-user-email': 'student@smu.edu.sg' }),
+      headers: expect.objectContaining({ Authorization: 'Bearer token-abc' }),
     }))
 
     vi.unstubAllGlobals()

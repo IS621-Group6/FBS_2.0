@@ -8,14 +8,70 @@ const { formatBookingConfirmation } = require("./emailTemplates");
 
 const compression = require("compression");
 const NodeCache = require("node-cache");
-const validateBookingInput = require("./middleware/validateBookingInput");
 
 const app = express();
+const globalLimiter = rateLimit({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
+  max: Number(process.env.RATE_LIMIT_GLOBAL) || 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    console.warn(
+      `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
+    );
+
+    res.status(429).json({
+      error: "Too many requests. Please try again later.",
+    });
+  },
+});
+
+const searchLimiter = rateLimit({
+  windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
+  max: Number(process.env.RATE_LIMIT_SEARCH) || 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    console.warn(
+      `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
+    );
+
+    res.status(429).json({
+      error: "Too many search requests. Please slow down.",
+    });
+  },
+});
+
+const searchCache = new NodeCache({ stdTTL: 60 });
+
+app.use(compression());
+
+app.use((req, res, next) => {
+  const start = Date.now();
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.originalUrl} ${duration}ms`);
+  });
+
+  next();
+});
+
 app.use(cors());
 app.use(express.json());
 
 const envJwtSecret = process.env.JWT_SECRET;
 const isProduction = process.env.NODE_ENV === "production";
+
+function globalLimiterUnlessSearch(req, res, next) {
+  if (req.method === "GET" && req.path === "/api/facilities") {
+    return next();
+  }
+
+  return globalLimiter(req, res, next);
+}
+
+app.use(globalLimiterUnlessSearch);
 
 if (isProduction && !envJwtSecret) {
   throw new Error("JWT_SECRET environment variable must be set in production.");
@@ -38,6 +94,78 @@ function authenticateToken(req, res, next) {
     req.user = user;
     next();
   });
+}
+
+function getTokenUserFromRequest(req) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return { user: null, error: null };
+  }
+
+  try {
+    const user = jwt.verify(token, JWT_SECRET);
+    return { user, error: null };
+  } catch (error) {
+    if (error?.name === "TokenExpiredError") {
+      return { user: null, error: { status: 401, message: "Token expired" } };
+    }
+
+    return { user: null, error: { status: 401, message: "Invalid token" } };
+  }
+}
+
+function resolveRequestUserEmail(req, { allowBodyUserEmail = false } = {}) {
+  const tokenResult = getTokenUserFromRequest(req);
+  if (tokenResult.error) {
+    return tokenResult;
+  }
+
+  const tokenEmail = String(tokenResult.user?.email || "").trim();
+  if (tokenEmail) {
+    return { user: tokenResult.user, email: tokenEmail.toLowerCase(), error: null };
+  }
+
+  const headerEmail = String(req.headers["x-user-email"] || "").trim();
+  if (headerEmail) {
+    return { user: null, email: headerEmail.toLowerCase(), error: null };
+  }
+
+  if (allowBodyUserEmail) {
+    const bodyEmail = String(req.body?.userEmail || "").trim();
+    if (bodyEmail) {
+      return { user: null, email: bodyEmail.toLowerCase(), error: null };
+    }
+  }
+
+  return { user: null, email: "", error: null };
+}
+
+function insertAuditLog(db, action, userEmail, bookingId, details) {
+  try {
+    db.prepare(
+      `INSERT INTO audit_logs (action, user_email, booking_id, details) VALUES (?, ?, ?, ?)`
+    ).run(action, userEmail, bookingId, JSON.stringify(details));
+  } catch (error) {
+    if (String(error?.message || "").includes("no such table: audit_logs")) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+function selectAuditLogs(db, whereSql, params) {
+  try {
+    return db.prepare(`SELECT * FROM audit_logs ${whereSql} ORDER BY timestamp DESC`).all(...params);
+  } catch (error) {
+    if (String(error?.message || "").includes("no such table: audit_logs")) {
+      return [];
+    }
+
+    throw error;
+  }
 }
 
 function pad2(n) {
@@ -217,6 +345,7 @@ app.get("/api/health", async (req, res) => {
     );
 
     res.status(200).json({
+      ok: status === "OK",
       status,
       service: "smu-fbs",
       database: dbStatus,
@@ -810,8 +939,8 @@ app.get("/api/availability-glimpse", (req, res) => {
   res.json({ date, duration, items });
 });
 
-app.get("/api/bookings", (req, res) => {
-  const userEmail = String(req.query.userEmail || req.headers["x-user-email"] || "").trim();
+app.get("/api/bookings", authenticateToken, (req, res) => {
+  const userEmail = String(req.user?.email || "").trim().toLowerCase();
   const db = getDb();
   if (db) {
     try {
@@ -872,12 +1001,22 @@ app.get("/api/bookings", (req, res) => {
   res.json({ items });
 });
 
-app.post("/api/bookings", validateBookingInput, (req, res) => {
-  const { facilityId, date, start, end, userEmail, reason } = req.body || {};
+app.post("/api/bookings", authenticateToken, (req, res) => {
+  const { facilityId, date, start, end, reason } = req.body || {};
   // role may come from a header or the body; default to student for sanity
-  const userRole = String(req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
+  const userRole = String(req.user?.role || req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
 
- 
+  if (!facilityId || !date || !start || !end) {
+    res.status(400).json({ message: "Missing required booking fields" });
+    return;
+  }
+
+  const userEmail = String(req.user?.email || "").trim().toLowerCase();
+
+  if (!userEmail) {
+    res.status(401).json({ message: "Access token required" });
+    return;
+  }
 
   if (!isIsoYmd(date)) {
     res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
@@ -948,7 +1087,7 @@ app.post("/api/bookings", validateBookingInput, (req, res) => {
         return;
       }
 
-      const email = String(userEmail || "guest@smu.edu.sg").trim().toLowerCase();
+      const email = userEmail;
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
 
       const tx = db.transaction(() => {
@@ -980,8 +1119,13 @@ app.post("/api/bookings", validateBookingInput, (req, res) => {
       });
 
       const bookingId = tx();
-      db.prepare(`INSERT INTO audit_logs (action, user_email, booking_id, details) VALUES (?, ?, ?, ?)`).run('CREATE', email, bookingId, JSON.stringify({ facilityId, date, start, end, reason: reasonTrimmed }));
-      const emailBody = formatBookingConfirmation(userRole);
+      insertAuditLog(db, 'CREATE', email, bookingId, { facilityId, date, start, end, reason: reasonTrimmed });
+      formatBookingConfirmation(userRole);
+      console.log("BOOKING_CREATED", {
+        bookingId: `B-${bookingId}`,
+        userEmail: email,
+        timestamp: new Date().toISOString(),
+      });
       console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole });
 
       res.status(201).json({
@@ -1042,7 +1186,7 @@ app.post("/api/bookings", validateBookingInput, (req, res) => {
     date,
     start,
     end,
-    userEmail: userEmail || "unknown@smu.edu.sg",
+    userEmail,
     status: "active",
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
   };
@@ -1050,17 +1194,20 @@ app.post("/api/bookings", validateBookingInput, (req, res) => {
   BOOKINGS.push(booking);
   console.log("BOOKING_CREATED", {
     bookingId: booking.id,
-  const emailBody = formatBookingConfirmation(userRole);
+    userEmail: booking.userEmail,
+    timestamp: new Date().toISOString(),
+  });
+  formatBookingConfirmation(userRole);
   console.log("SEND_EMAIL", { bookingId: booking.id, userRole });
 
   res.status(201).json(booking);
 });
 
-app.put("/api/bookings/:id", validateBookingInput, (req, res) => {
+app.put("/api/bookings/:id", authenticateToken, (req, res) => {
   const bookingIdRaw = String(req.params.id || "").trim();
   const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
-  const userEmail = String(req.headers["x-user-email"] || "").trim();
   const { date, start, end } = req.body || {};
+  const userEmail = String(req.user?.email || "").trim().toLowerCase();
 
   if (!userEmail) {
     res.status(401).json({ message: "Please log in to modify bookings." });
@@ -1263,15 +1410,19 @@ app.put("/api/bookings/:id", validateBookingInput, (req, res) => {
     start: booking.start,
     end: booking.end,
     userEmail: booking.userEmail,
-    timestamp: new Date().toISOString(),
-    details: { facilityId: booking.facilityId, date: booking.date, start: booking.start, end: booking.end, reason: booking.reason }
+    status: String(booking.status || "active").toLowerCase(),
+    reason: booking.reason,
   });
-  res.status(201).json(booking);
 });
 
 app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
   const bookingId = req.params.id
-  const userEmail = req.user.email
+  const userEmail = String(req.user?.email || "").trim().toLowerCase()
+
+  if (!userEmail) {
+    res.status(401).json({ message: "Please log in to cancel bookings." })
+    return
+  }
 
   const db = getDb();
   if (db) {
@@ -1304,8 +1455,15 @@ app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
       }
 
       db.prepare(`UPDATE bookings SET status = 'CANCELLED' WHERE booking_id = ?`).run(numericId);
-      db.prepare(`INSERT INTO audit_logs (action, user_email, booking_id, details) VALUES (?, ?, ?, ?)`).run('CANCEL', userEmail, numericId, JSON.stringify({ bookingId }));
-      res.json({ message: "Booking cancelled successfully." });
+      insertAuditLog(db, 'CANCEL', userEmail, numericId, { bookingId });
+      res.json({
+        message: "Booking cancelled successfully.",
+        booking: {
+          id: bookingId,
+          userEmail,
+          status: "cancelled",
+        },
+      });
       return;
     } catch (e) {
       console.error("Error cancelling booking in DB:", e);
@@ -1384,7 +1542,7 @@ app.get("/api/admin/logs", authenticateToken, (req, res) => {
     }
 
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-    const rows = db.prepare(`SELECT * FROM audit_logs ${whereSql} ORDER BY timestamp DESC`).all(...params);
+    const rows = selectAuditLogs(db, whereSql, params);
 
     res.json({ logs: rows });
   } catch (e) {
@@ -1413,6 +1571,11 @@ if (process.env.NODE_ENV !== 'production') {
 app.get("/", (req, res) => {
   res.send("FBS 2.0 backend running");
 });
-app.listen(3001, () => {
-  console.log("Backend running on port 3001");
-});
+
+if (require.main === module) {
+  app.listen(3001, () => {
+    console.log("Backend running on port 3001");
+  });
+}
+
+module.exports = app;

@@ -246,7 +246,7 @@ export default function ViewBookingsPage() {
     setIsLoading(true)
     setError('')
     try {
-      const payload = await getBookings(userEmail)
+      const payload = await getBookings()
       setItems(payload?.items || [])
     } catch (e) {
       setError(e?.message || 'Failed to load bookings')
@@ -277,7 +277,7 @@ export default function ViewBookingsPage() {
     const bookingId = String(booking.id || '').replace(/^B-/, '')
     setIsCancellingById((prev) => ({ ...prev, [bookingId]: true }))
     try {
-      await cancelBooking(bookingId, userEmail)
+      await cancelBooking(bookingId)
       await loadBookings()
       setCancelSuccess(booking.id)
       setConfirmCancel(null)
@@ -343,7 +343,7 @@ export default function ViewBookingsPage() {
     setModifyError('')
 
     try {
-      await modifyBooking(plainId, { date, start, end }, userEmail)
+      await modifyBooking(plainId, { date, start, end })
       await loadBookings()
       handleCloseModify()
     } catch (e) {
