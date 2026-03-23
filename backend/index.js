@@ -1297,6 +1297,8 @@ app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
       return;
     } catch (e) {
       console.error("Error cancelling booking in DB:", e);
+      res.status(500).json({ message: "An error occurred while cancelling the booking." });
+      return;
     }
   }
 
