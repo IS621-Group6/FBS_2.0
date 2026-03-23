@@ -804,12 +804,8 @@ app.get("/api/availability-glimpse", (req, res) => {
   res.json({ date, duration, items });
 });
 
-app.post("/api/bookings", authenticateToken, (req, res) => {
-  const { facilityId, date, start, end, reason } = req.body || {};
-  const userEmail = req.user.email;
 app.get("/api/bookings", (req, res) => {
   const userEmail = String(req.query.userEmail || req.headers["x-user-email"] || "").trim();
-
   const db = getDb();
   if (db) {
     try {
