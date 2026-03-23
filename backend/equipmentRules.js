@@ -1,0 +1,285 @@
+const CANONICAL_EQUIPMENT = [
+  'Classroom PC',
+  'Classroom Prompter',
+  'Clip-on Mic',
+  'DVD Player',
+  'Projector',
+  'Wireless Projection',
+  'Handheld Mic',
+  'Hybrid (USB connection)',
+  'In-room VC System',
+  'TV Panel',
+  'USB Connection VC room',
+  'Video Recording',
+]
+
+const BASE_FOR_CLASSROOM_AND_SEMINAR = [
+  'Clip-on Mic',
+  'Classroom PC',
+  'Classroom Prompter',
+  'DVD Player',
+  'Projector',
+  'Wireless Projection',
+]
+
+const HANDHELD_MIC_ROOMS = new Set([
+  'SMUC Meeting Lounge 4-1',
+  'SOSS/CIS Classroom 1-2',
+  'SOSS/CIS Classroom 3-2',
+  'SOSS/CIS Classroom 3-4',
+  'SOSS/CIS Classroom 3-5',
+  'SOSS/CIS Seminar Room 1-1',
+  'SOSS/CIS Seminar Room 1-3',
+  'SOSS/CIS Seminar Room 2-1',
+  'SOSS/CIS Seminar Room 2-2',
+  'SOSS/CIS Seminar Room 3-1',
+  'SOSS/CIS Seminar Room 3-3',
+  'SOSS/CIS Seminar Room B1-1',
+  'YPHSL Seminar Room 2-04',
+  'YPHSL Seminar Room 2-05',
+  'YPHSL Seminar Room 2-15',
+  'YPHSL Seminar Room 2-16',
+  'YPHSL Seminar Room 3-01',
+  'YPHSL Seminar Room 3-02',
+  'YPHSL Seminar Room 3-09',
+  'YPHSL Seminar Room 3-10',
+  'YPHSL Seminar Room 3-11',
+  'YPHSL Seminar Room 3-12',
+  'YPHSL Seminar Room B1-01',
+  'YPHSL Seminar Room B2-01',
+])
+
+const HYBRID_USB_ROOMS = new Set([
+  'LKSLIB Project Room 2-4',
+  'LKSLIB Project Room 2-5',
+  'LKSLIB Project Room 5-8',
+  'LKSLIB Project Room 5-9',
+  'SCIS1 Classroom 3-1',
+  'SCIS1 Classroom 3-2',
+  'SMUC Meeting Pod 4-1',
+  'SMUC Meeting Pod 4-2',
+  'SMUC Meeting Pod 4-3',
+  'SMUC Meeting Pod 4-4',
+  'SMUC Meeting Pod 4-5',
+  'SMUC Meeting Pod 4-6',
+  'SMUC Meeting Pod 4-7',
+  'SOE/SCIS2 Classroom 3-1',
+  'SOE/SCIS2 Classroom 3-2',
+])
+
+const IN_ROOM_VC_SYSTEM_ROOMS = new Set([
+  'LKSLIB Project Room 2-4',
+  'LKSLIB Project Room 2-5',
+  'SCIS1 Seminar Room 2-1',
+  'SCIS1 Seminar Room B1-1',
+  'SMUC Active Learning Classroom 3-1',
+  'SOA Seminar Room 2-4',
+  'SOE/SCIS2 Seminar Room 5-2',
+  'SOSS/CIS Classroom 1-2',
+  'SOSS/CIS Classroom 3-2',
+  'SOSS/CIS Classroom 3-4',
+  'SOSS/CIS Classroom 3-5',
+  'SOSS/CIS Seminar Room 1-1',
+  'SOSS/CIS Seminar Room 1-3',
+  'SOSS/CIS Seminar Room 2-1',
+  'SOSS/CIS Seminar Room 2-2',
+  'SOSS/CIS Seminar Room 3-1',
+  'SOSS/CIS Seminar Room 3-3',
+  'SOSS/CIS Seminar Room B1-1',
+  'YPHSL Seminar Room 2-16',
+  'YPHSL Seminar Room 3-10',
+  'YPHSL Seminar Room B1-01',
+  'YPHSL Seminar Room B2-01',
+])
+
+const TV_PANEL_ROOMS = new Set([
+  'KGC-4.01-PR',
+  'KGC-4.02-PR',
+  'KGC-4.03-PR',
+  'KGC-4.04-PR',
+  'KGC-4.05-PR',
+  'KGC-4.06-PR',
+  'KGC-4.07-PR',
+  'KGC-4.08-PR',
+  'KGC-4.09-PR',
+  'KGC-4.10-PR',
+  'KGC-4.11-PR',
+  'KGC-4.12-PR',
+  'KGC-4.13-PR',
+  'LKSLIB Project Room 2-0',
+  'LKSLIB Project Room 2-1',
+  'LKSLIB Project Room 2-2',
+  'LKSLIB Project Room 2-3',
+  'LKSLIB Project Room 2-4',
+  'LKSLIB Project Room 2-5',
+  'LKSLIB Project Room 3-1',
+  'LKSLIB Project Room 3-2',
+  'LKSLIB Project Room 3-3',
+  'LKSLIB Project Room 3-4',
+  'LKSLIB Project Room 3-5',
+  'LKSLIB Project Room 4-1',
+  'LKSLIB Project Room 4-10',
+  'LKSLIB Project Room 4-11',
+  'LKSLIB Project Room 4-12',
+  'LKSLIB Project Room 4-13',
+  'LKSLIB Project Room 4-14',
+  'LKSLIB Project Room 4-15',
+  'LKSLIB Project Room 4-16',
+  'LKSLIB Project Room 4-18',
+  'LKSLIB Project Room 4-4',
+  'LKSLIB Project Room 4-5',
+  'LKSLIB Project Room 4-6',
+  'LKSLIB Project Room 4-7',
+  'LKSLIB Project Room 4-8',
+  'LKSLIB Project Room 4-9',
+  'LKSLIB Project Room 5-1',
+  'LKSLIB Project Room 5-10',
+  'LKSLIB Project Room 5-2',
+  'LKSLIB Project Room 5-3',
+  'LKSLIB Project Room 5-4',
+  'LKSLIB Project Room 5-5',
+  'LKSLIB Project Room 5-6',
+  'LKSLIB Project Room 5-7',
+  'LKSLIB Project Room 5-8',
+  'LKSLIB Project Room 5-9',
+  'LKSLIB Study Booth 2-1',
+  'LKSLIB Study Booth 2-3',
+  'LKSLIB Study Booth 2-5',
+  'LKSLIB Study Booth 3-1',
+  'LKSLIB Study Booth 4-1',
+  'LKSLIB Study Booth 4-2',
+  'LKSLIB Study Booth 4-3',
+  'SMUC Meeting Pod 4-1',
+  'SMUC Meeting Pod 4-2',
+  'SMUC Meeting Pod 4-3',
+  'SMUC Meeting Pod 4-4',
+  'SMUC Meeting Pod 4-5',
+  'SMUC Meeting Pod 4-6',
+  'SMUC Meeting Pod 4-7',
+  'SOE/SCIS2 Classroom 3-1',
+  'SOE/SCIS2 Classroom 3-2',
+])
+
+const USB_CONNECTION_VC_ROOM_ROOMS = new Set([
+  'LKCSB Seminar Room 1-1',
+  'LKCSB Seminar Room 1-2',
+  'LKCSB Seminar Room 2-1',
+  'LKCSB Seminar Room 2-2',
+  'LKCSB Seminar Room 2-3',
+  'LKCSB Seminar Room 2-4',
+  'LKCSB Seminar Room 2-5',
+  'LKCSB Seminar Room 2-6',
+  'LKCSB Seminar Room 2-7',
+  'LKCSB Seminar Room 2-8',
+  'SCIS1 Classroom 3-1',
+  'SCIS1 Classroom 3-2',
+  'SCIS1 Seminar Room 2-4',
+  'SCIS1 Seminar Room 3-1',
+  'SMUC Active Learning Classroom 3-1',
+  'SMUC Active Learning Classroom 3-2',
+  'SMUC Active Learning Classroom 3-3',
+  'SMUC Active Learning Classroom 4-1',
+  'SMUC Active Learning Classroom 4-2',
+  'SOA Seminar Room 1-1',
+  'SOA Seminar Room 2-2',
+  'SOE/SCIS2 Classroom 3-1',
+  'SOE/SCIS2 Classroom 3-2',
+  'SOE/SCIS2 Seminar Room 2-1',
+  'SOE/SCIS2 Seminar Room 2-5',
+  'SOE/SCIS2 Seminar Room 3-2',
+  'SOE/SCIS2 Seminar Room B1-1',
+  'SOSS/CIS Classroom 1-2',
+  'SOSS/CIS Classroom 3-2',
+  'SOSS/CIS Classroom 3-4',
+  'SOSS/CIS Classroom 3-5',
+  'SOSS/CIS Seminar Room 1-1',
+  'SOSS/CIS Seminar Room 1-3',
+  'SOSS/CIS Seminar Room 2-1',
+  'SOSS/CIS Seminar Room 2-2',
+  'SOSS/CIS Seminar Room 3-1',
+  'SOSS/CIS Seminar Room 3-3',
+  'SOSS/CIS Seminar Room B1-1',
+  'YPHSL Seminar Room 2-16',
+  'YPHSL Seminar Room 3-10',
+  'YPHSL Seminar Room B1-01',
+  'YPHSL Seminar Room B2-01',
+])
+
+const VIDEO_RECORDING_ROOMS = new Set([
+  'SCIS1 Classroom B1-1',
+  'SCIS1 Seminar Room 2-1',
+  'SCIS1 Seminar Room B1-1',
+  'SMUC Active Learning Classroom 3-1',
+  'SMUC Active Learning Classroom 3-2',
+  'SOA Seminar Room 2-4',
+  'SOE/SCIS2 Seminar Room 5-2',
+  'SOE/SCIS2 Seminar Room B1-1',
+  'SOE/SCIS2 Seminar Room B1-2',
+  'SOSS/CIS Classroom 1-2',
+  'SOSS/CIS Classroom 3-2',
+  'SOSS/CIS Classroom 3-4',
+  'SOSS/CIS Classroom 3-5',
+  'SOSS/CIS Seminar Room 1-1',
+  'SOSS/CIS Seminar Room 1-3',
+  'SOSS/CIS Seminar Room 2-1',
+  'SOSS/CIS Seminar Room 2-2',
+  'SOSS/CIS Seminar Room 3-1',
+  'SOSS/CIS Seminar Room 3-3',
+  'SOSS/CIS Seminar Room B1-1',
+  'YPHSL Classroom 1-02',
+  'YPHSL Classroom B1-09',
+  'YPHSL Classroom B1-13',
+  'YPHSL Classroom B2-03',
+  'YPHSL Seminar Room 2-01',
+  'YPHSL Seminar Room 2-02',
+  'YPHSL Seminar Room 2-03',
+  'YPHSL Seminar Room 2-04',
+  'YPHSL Seminar Room 2-05',
+  'YPHSL Seminar Room 2-11',
+  'YPHSL Seminar Room 2-15',
+  'YPHSL Seminar Room 2-16',
+  'YPHSL Seminar Room 3-01',
+  'YPHSL Seminar Room 3-02',
+  'YPHSL Seminar Room 3-09',
+  'YPHSL Seminar Room 3-10',
+  'YPHSL Seminar Room 3-11',
+  'YPHSL Seminar Room 3-12',
+  'YPHSL Seminar Room B1-01',
+  'YPHSL Seminar Room B2-01',
+])
+
+function isClassroomOrSeminarByTypeOrName({ facilityType, facilityName }) {
+  const t = String(facilityType || '').trim()
+  const n = String(facilityName || '')
+  if (t === 'Classroom' || t === 'Seminar Room') return true
+  // Include "Active Learning Classroom" etc even if canonical type mapping differs.
+  return /\bClassroom\b|\bSeminar Room\b/i.test(n)
+}
+
+function computeEquipmentForFacility({ facilityName, facilityType }) {
+  const name = String(facilityName || '').trim()
+  const type = String(facilityType || '').trim()
+
+  const eq = new Set()
+
+  if (isClassroomOrSeminarByTypeOrName({ facilityType: type, facilityName: name })) {
+    for (const e of BASE_FOR_CLASSROOM_AND_SEMINAR) eq.add(e)
+  }
+
+  if (HANDHELD_MIC_ROOMS.has(name)) eq.add('Handheld Mic')
+  if (HYBRID_USB_ROOMS.has(name)) eq.add('Hybrid (USB connection)')
+  if (IN_ROOM_VC_SYSTEM_ROOMS.has(name)) eq.add('In-room VC System')
+  if (TV_PANEL_ROOMS.has(name)) eq.add('TV Panel')
+  if (USB_CONNECTION_VC_ROOM_ROOMS.has(name)) eq.add('USB Connection VC room')
+  if (VIDEO_RECORDING_ROOMS.has(name)) eq.add('Video Recording')
+
+  // Keep only the allowed set (also guarantees removed types never leak in).
+  const allowed = new Set(CANONICAL_EQUIPMENT)
+  return Array.from(eq).filter((x) => allowed.has(x)).sort((a, b) => a.localeCompare(b))
+}
+
+module.exports = {
+  CANONICAL_EQUIPMENT,
+  BASE_FOR_CLASSROOM_AND_SEMINAR,
+  computeEquipmentForFacility,
+}

@@ -58,7 +58,7 @@ export default function FacilityCard({
         </div>
 
         <div className="row" style={{ justifyContent: 'space-between' }}>
-          <span className="muted2">Room ID: {facility.id}</span>
+          <span />
           <div className="row" style={{ gap: 10 }}>
             <Link className="btn" to={detailUrl}>
               Details

@@ -9,6 +9,13 @@
   padding: var(--space-6);
 }
 
+.containerBleed {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: var(--space-6);
+}
+
 .containerNarrow {
   width: 100%;
   max-width: 860px;
@@ -52,10 +59,12 @@
 
 .topNav .brandTitle {
   color: var(--primary-contrast);
+  font-size: 22px;
 }
 
 .topNav .brandSub {
   color: color-mix(in srgb, var(--primary-contrast) 78%, transparent);
+  font-size: 14px;
 }
 
 .topNav .pill {
@@ -68,6 +77,8 @@
   background: color-mix(in srgb, var(--primary-contrast) 8%, transparent);
   border-color: color-mix(in srgb, var(--primary-contrast) 20%, transparent);
   color: var(--primary-contrast);
+  padding: 12px 15px;
+  font-size: 18px;
 }
 
 .topNav .btn:hover {
@@ -78,6 +89,8 @@
   background: color-mix(in srgb, var(--primary-contrast) 16%, transparent);
   border-color: color-mix(in srgb, var(--primary-contrast) 24%, transparent);
   color: var(--primary-contrast);
+  padding: 12px 15px;
+  font-size: 14px;
 }
 
 .topNav .btnPrimary:hover {
@@ -98,10 +111,63 @@
 .topNavInner {
   display: flex;
   align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-3) var(--space-6);
+  gap: calc(var(--space-4) * 1.25);
+  padding: var(--space-4) var(--space-6);
+  max-width: none;
+  margin: 0;
+}
+
+.primaryTabsBar {
+  position: sticky;
+  top: 72px;
+  z-index: 9;
+  background: var(--surface);
+  border-bottom: 0;
+}
+
+.primaryTabsBarInline {
+  background: transparent;
+  border-bottom: 0;
+}
+
+.primaryTabsInner {
+  display: flex;
+  gap: 0;
+  padding: 0 calc(var(--space-6) * 1.25);
   max-width: 1120px;
   margin: 0 auto;
+}
+
+.primaryTabsInnerInline {
+  padding: 0;
+  max-width: none;
+  margin: 0;
+  gap: 0;
+}
+
+.primaryTab {
+  flex: 1;
+  display: block;
+  text-align: center;
+  padding: 23px 15px;
+  border: 0;
+  border-bottom: 4px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-size: 16px;
+}
+
+.primaryTab:hover {
+  text-decoration: none;
+  color: var(--primary);
+}
+
+.primaryTabActive {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
 }
 
 .brand {
@@ -127,7 +193,14 @@
 .navRight {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: calc(var(--space-3) * 1.5);
+}
+
+.topNav .navEmail {
+  color: var(--primary-contrast);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .pill {
@@ -154,6 +227,33 @@
   grid-template-columns: 320px 1fr;
   gap: var(--space-6);
   align-items: start;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 72px 16px;
+  color: var(--muted-2);
+}
+
+.emptyStateIcon {
+  width: 25px;
+  height: 25px;
+  margin: 0 auto 14px;
+  color: color-mix(in srgb, var(--muted-2) 70%, transparent);
+}
+
+.emptyStateTitle {
+  font-size: 30px;
+  margin: 0;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.emptyStateSubtitle {
+  font-size: 22px;
+  margin: 10px 0 0;
+  letter-spacing: -0.01em;
+  color: var(--muted-2);
 }
 
 .stack {
@@ -229,6 +329,25 @@
   border-color: #cbd5e1;
 }
 
+.btnSm {
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.topNav .btnDanger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: var(--primary-contrast);
+  padding: 10px 12px;
+  font-size: 12px;
+}
+
+.topNav .btnDanger:hover {
+  background: color-mix(in srgb, var(--danger) 90%, var(--text));
+  border-color: color-mix(in srgb, var(--danger) 90%, var(--text));
+}
+
 .btnPrimary {
   background: var(--primary);
   border-color: var(--primary);
@@ -288,11 +407,211 @@
   gap: var(--space-4);
 }
 
+.searchDockedLayout {
+  position: relative;
+}
+
+.searchDockedLayoutDocked {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.searchSidebar {
+  width: 0;
+  height: 0;
+  overflow: visible;
+}
+
+.searchMain {
+  min-width: 0;
+  padding-left: 0;
+  transition: padding-left 260ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  will-change: padding-left;
+}
+
+.searchDockedLayoutDocked .searchMain {
+  /* 340px docked filter width + extra gutter between filter and cards */
+  padding-left: calc(340px + var(--space-6));
+}
+
+.searchSidebarSticky {
+  position: sticky;
+  top: calc(72px + var(--space-4));
+}
+
+.searchFilterDock {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: opacity 160ms ease, transform 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  pointer-events: none;
+}
+
+.searchFilterDockActive {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+  position: fixed;
+  /* Align the docked filter with the same content gutter as the results. */
+  left: var(--space-6);
+  top: calc(72px + var(--space-4));
+  width: 340px;
+  z-index: 9;
+  max-height: calc(100vh - 72px - (var(--space-4) * 2));
+  overflow: auto;
+}
+
+.searchFilterDockActive .filterGridTop {
+  grid-template-columns: 1fr;
+}
+
+.searchFilterTop {
+  overflow: hidden;
+  max-height: 2000px;
+  opacity: 1;
+  transform: translateY(0);
+  margin-bottom: var(--space-4);
+  transition: max-height 240ms cubic-bezier(0.2, 0.9, 0.2, 1), opacity 160ms ease, transform 200ms ease,
+    margin-bottom 240ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.searchFilterTopHidden {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-8px);
+  margin-bottom: 0;
+  pointer-events: none;
+}
+
 .filterBar {
   display: flex;
   gap: var(--space-3);
   flex-wrap: wrap;
   align-items: flex-end;
+}
+
+/* Screenshot-style filter card (kept intentionally) */
+.filterCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+.filterCardIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: var(--primary-soft-bg);
+  border: 1px solid var(--primary-soft-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-soft-text);
+}
+
+.filterCardIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.filterGridTop {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-4);
+  align-items: end;
+}
+
+.filterSection {
+  padding-top: var(--space-3);
+}
+
+.filterSectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.filterChips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterChipBtn {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.filterChipBtn:hover {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+
+.filterChipBtnActive {
+  background: var(--primary-soft-bg);
+  border-color: var(--primary-soft-border);
+  color: var(--primary-soft-text);
+}
+
+.filterInlineToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+@media (max-width: 900px) {
+  .filterGridTop {
+    grid-template-columns: 1fr;
+  }
+
+  .searchDockedLayout {
+    position: relative;
+  }
+
+  .searchDockedLayoutDocked {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .searchSidebar {
+    width: 0;
+    height: 0;
+  }
+
+  .searchDockedLayoutDocked .searchSidebar {
+    width: 0;
+  }
+
+  .searchSidebarSticky {
+    position: static;
+    top: auto;
+  }
+
+  .searchDockedLayoutDocked .searchMain {
+    padding-left: 0;
+  }
+
+  .searchFilterDockActive {
+    position: static;
+    left: auto;
+    top: auto;
+    width: auto;
+    max-height: none;
+    overflow: visible;
+  }
 }
 
 .filterItem {
@@ -333,6 +652,120 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.monthCalendarWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.monthCalendarWeekday {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.monthCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.monthCalendarBlank {
+  min-height: 104px;
+}
+
+.monthCalendarDayPlaceholder {
+  min-height: 104px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  opacity: 0.28;
+}
+
+.monthCalendarDayBtn {
+  padding: 10px;
+  min-height: 104px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.monthCalendarDayToday {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary-soft-bg) 35%, var(--surface));
+}
+
+.monthCalendarDayToday .monthCalendarDayNumber {
+  color: var(--primary);
+}
+
+.monthCalendarDayToday.monthCalendarDayHasBookings {
+  border-color: color-mix(in srgb, var(--primary) 70%, var(--primary-soft-border));
+}
+
+.monthCalendarDayPast {
+  opacity: 0.62;
+}
+
+.monthCalendarDayPast .monthCalendarDayNumber {
+  color: var(--muted);
+}
+
+.monthCalendarDayHasBookings {
+  border-color: var(--primary-soft-border);
+  background: var(--primary-soft-bg);
+}
+
+.monthCalendarDayNumber {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.monthCalendarEvents {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.monthCalendarEvent {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.2;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.monthCalendarEventTime {
+  font-weight: 800;
+}
+
+.monthCalendarEventMore {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.monthCalendarDayCount {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary-soft-text);
+}
+
+.monthCalendarDayCountMuted {
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .slotBtn {
@@ -418,7 +851,8 @@
   }
 
   .container,
-  .containerNarrow {
+  .containerNarrow,
+  .containerBleed {
     padding: var(--space-4);
   }
 

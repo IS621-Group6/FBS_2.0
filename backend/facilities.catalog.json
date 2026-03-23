@@ -1,0 +1,3674 @@
+[
+  {
+    "id": "ADMIN-BADMINTON-COURT-1",
+    "name": "Admin Badminton Court-1",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 4,
+    "type": "Badminton Court"
+  },
+  {
+    "id": "ADMIN-BADMINTON-COURT-2",
+    "name": "Admin Badminton Court-2",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 4,
+    "type": "Badminton Court"
+  },
+  {
+    "id": "ADMIN-BADMINTON-COURT-3",
+    "name": "Admin Badminton Court-3",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 4,
+    "type": "Badminton Court"
+  },
+  {
+    "id": "ADMIN-BASKETBALL-COURT",
+    "name": "Admin Basketball Court",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 10,
+    "type": "Basketball Court"
+  },
+  {
+    "id": "ADMIN-FENCING",
+    "name": "Admin Fencing",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 8,
+    "type": "Fencing"
+  },
+  {
+    "id": "ADMIN-FLOORBALL-COURT",
+    "name": "Admin Floorball Court",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 10,
+    "type": "Floorball Court"
+  },
+  {
+    "id": "ADMIN-NETBALL-COURT",
+    "name": "Admin Netball Court",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 10,
+    "type": "Netball Court"
+  },
+  {
+    "id": "ADMIN-TABLE-TENNIS-TABLE-1",
+    "name": "Admin Table Tennis table-1",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 4,
+    "type": "Table Tennis Table"
+  },
+  {
+    "id": "ADMIN-TABLE-TENNIS-TABLE-2",
+    "name": "Admin Table Tennis table-2",
+    "campus": "SMU",
+    "building": "Admin Building",
+    "floor": 1,
+    "capacity": 4,
+    "type": "Table Tennis Table"
+  },
+  {
+    "id": "LKCSB-CLASSROOM-2-1",
+    "name": "LKCSB Classroom 2-1",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "LKCSB-CLASSROOM-3-2",
+    "name": "LKCSB Classroom 3-2",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "LKCSB-CLASSROOM-3-3",
+    "name": "LKCSB Classroom 3-3",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "LKCSB-CLASSROOM-3-4",
+    "name": "LKCSB Classroom 3-4",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "LKCSB-CLASSROOM-3-5",
+    "name": "LKCSB Classroom 3-5",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "LKCSB-GSR-1-1",
+    "name": "LKCSB GSR 1-1",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-1-2",
+    "name": "LKCSB GSR 1-2",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-1",
+    "name": "LKCSB GSR 2-1",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-10",
+    "name": "LKCSB GSR 2-10",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-11",
+    "name": "LKCSB GSR 2-11",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-12",
+    "name": "LKCSB GSR 2-12",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-13",
+    "name": "LKCSB GSR 2-13",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-14",
+    "name": "LKCSB GSR 2-14",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-15",
+    "name": "LKCSB GSR 2-15",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-16",
+    "name": "LKCSB GSR 2-16",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-17",
+    "name": "LKCSB GSR 2-17",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-18",
+    "name": "LKCSB GSR 2-18",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-19",
+    "name": "LKCSB GSR 2-19",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-2",
+    "name": "LKCSB GSR 2-2",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-20",
+    "name": "LKCSB GSR 2-20",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-21",
+    "name": "LKCSB GSR 2-21",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-22",
+    "name": "LKCSB GSR 2-22",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-23",
+    "name": "LKCSB GSR 2-23",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-24",
+    "name": "LKCSB GSR 2-24",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-25",
+    "name": "LKCSB GSR 2-25",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-3",
+    "name": "LKCSB GSR 2-3",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-4",
+    "name": "LKCSB GSR 2-4",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-5",
+    "name": "LKCSB GSR 2-5",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-6",
+    "name": "LKCSB GSR 2-6",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-7",
+    "name": "LKCSB GSR 2-7",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-8",
+    "name": "LKCSB GSR 2-8",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-2-9",
+    "name": "LKCSB GSR 2-9",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-1",
+    "name": "LKCSB GSR 3-1",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-11",
+    "name": "LKCSB GSR 3-11",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-12",
+    "name": "LKCSB GSR 3-12",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-13",
+    "name": "LKCSB GSR 3-13",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-14",
+    "name": "LKCSB GSR 3-14",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-15",
+    "name": "LKCSB GSR 3-15",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-16",
+    "name": "LKCSB GSR 3-16",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-17",
+    "name": "LKCSB GSR 3-17",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-18",
+    "name": "LKCSB GSR 3-18",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-19",
+    "name": "LKCSB GSR 3-19",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-2",
+    "name": "LKCSB GSR 3-2",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-20",
+    "name": "LKCSB GSR 3-20",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-21",
+    "name": "LKCSB GSR 3-21",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-22",
+    "name": "LKCSB GSR 3-22",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-23",
+    "name": "LKCSB GSR 3-23",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-24",
+    "name": "LKCSB GSR 3-24",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-25",
+    "name": "LKCSB GSR 3-25",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-26",
+    "name": "LKCSB GSR 3-26",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-27",
+    "name": "LKCSB GSR 3-27",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-28",
+    "name": "LKCSB GSR 3-28",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-29",
+    "name": "LKCSB GSR 3-29",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-3",
+    "name": "LKCSB GSR 3-3",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-30",
+    "name": "LKCSB GSR 3-30",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-31",
+    "name": "LKCSB GSR 3-31",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-32",
+    "name": "LKCSB GSR 3-32",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-33",
+    "name": "LKCSB GSR 3-33",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-34",
+    "name": "LKCSB GSR 3-34",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-35",
+    "name": "LKCSB GSR 3-35",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-4",
+    "name": "LKCSB GSR 3-4",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-5",
+    "name": "LKCSB GSR 3-5",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-6",
+    "name": "LKCSB GSR 3-6",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-7",
+    "name": "LKCSB GSR 3-7",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-8",
+    "name": "LKCSB GSR 3-8",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-GSR-3-9",
+    "name": "LKCSB GSR 3-9",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "LKCSB-MEETING-POD-3-1",
+    "name": "LKCSB Meeting Pod 3-1",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "LKCSB-MEETING-POD-3-2",
+    "name": "LKCSB Meeting Pod 3-2",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "LKCSB-MEETING-POD-3-3",
+    "name": "LKCSB Meeting Pod 3-3",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "LKCSB-MEETING-POD-3-4",
+    "name": "LKCSB Meeting Pod 3-4",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "LKCSB-MEETING-POD-3-5",
+    "name": "LKCSB Meeting Pod 3-5",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-1-1",
+    "name": "LKCSB Seminar Room 1-1",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-1-2",
+    "name": "LKCSB Seminar Room 1-2",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-2-1",
+    "name": "LKCSB Seminar Room 2-1",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-2-2",
+    "name": "LKCSB Seminar Room 2-2",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-2-3",
+    "name": "LKCSB Seminar Room 2-3",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-2-4",
+    "name": "LKCSB Seminar Room 2-4",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-2-5",
+    "name": "LKCSB Seminar Room 2-5",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-2-6",
+    "name": "LKCSB Seminar Room 2-6",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-2-7",
+    "name": "LKCSB Seminar Room 2-7",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-2-8",
+    "name": "LKCSB Seminar Room 2-8",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-1",
+    "name": "LKCSB Seminar Room 3-1",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-10",
+    "name": "LKCSB Seminar Room 3-10",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-2",
+    "name": "LKCSB Seminar Room 3-2",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-3",
+    "name": "LKCSB Seminar Room 3-3",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-4",
+    "name": "LKCSB Seminar Room 3-4",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-5",
+    "name": "LKCSB Seminar Room 3-5",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-6",
+    "name": "LKCSB Seminar Room 3-6",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-7",
+    "name": "LKCSB Seminar Room 3-7",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-8",
+    "name": "LKCSB Seminar Room 3-8",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKCSB-SEMINAR-ROOM-3-9",
+    "name": "LKCSB Seminar Room 3-9",
+    "campus": "SMU",
+    "building": "Lee Kong Chian School of Business",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "LKSLIB-PHONE-BOOTH-2-1",
+    "name": "LKSLIB Phone Booth 2.1",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Phone Booth"
+  },
+  {
+    "id": "LKSLIB-PHONE-BOOTH-2-2",
+    "name": "LKSLIB Phone Booth 2.2",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Phone Booth"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-2-0",
+    "name": "LKSLIB Project Room 2-0",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-2-1",
+    "name": "LKSLIB Project Room 2-1",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-2-2",
+    "name": "LKSLIB Project Room 2-2",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-2-3",
+    "name": "LKSLIB Project Room 2-3",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-2-4",
+    "name": "LKSLIB Project Room 2-4",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-2-5",
+    "name": "LKSLIB Project Room 2-5",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-3-1",
+    "name": "LKSLIB Project Room 3-1",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 3,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-3-2",
+    "name": "LKSLIB Project Room 3-2",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 3,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-3-3",
+    "name": "LKSLIB Project Room 3-3",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 3,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-3-4",
+    "name": "LKSLIB Project Room 3-4",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 3,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-3-5",
+    "name": "LKSLIB Project Room 3-5",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 3,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-1",
+    "name": "LKSLIB Project Room 4-1",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-10",
+    "name": "LKSLIB Project Room 4-10",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-11",
+    "name": "LKSLIB Project Room 4-11",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-12",
+    "name": "LKSLIB Project Room 4-12",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-13",
+    "name": "LKSLIB Project Room 4-13",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-14",
+    "name": "LKSLIB Project Room 4-14",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-15",
+    "name": "LKSLIB Project Room 4-15",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-16",
+    "name": "LKSLIB Project Room 4-16",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-18",
+    "name": "LKSLIB Project Room 4-18",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-2",
+    "name": "LKSLIB Project Room 4-2",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-4",
+    "name": "LKSLIB Project Room 4-4",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-5",
+    "name": "LKSLIB Project Room 4-5",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-6",
+    "name": "LKSLIB Project Room 4-6",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-7",
+    "name": "LKSLIB Project Room 4-7",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-8",
+    "name": "LKSLIB Project Room 4-8",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-4-9",
+    "name": "LKSLIB Project Room 4-9",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-1",
+    "name": "LKSLIB Project Room 5-1",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-10",
+    "name": "LKSLIB Project Room 5-10",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-2",
+    "name": "LKSLIB Project Room 5-2",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-3",
+    "name": "LKSLIB Project Room 5-3",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-4",
+    "name": "LKSLIB Project Room 5-4",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-5",
+    "name": "LKSLIB Project Room 5-5",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-6",
+    "name": "LKSLIB Project Room 5-6",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-7",
+    "name": "LKSLIB Project Room 5-7",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-8",
+    "name": "LKSLIB Project Room 5-8",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-PROJECT-ROOM-5-9",
+    "name": "LKSLIB Project Room 5-9",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 5,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-2-1",
+    "name": "LKSLIB Study Booth 2-1",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-2-2",
+    "name": "LKSLIB Study Booth 2-2",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-2-3",
+    "name": "LKSLIB Study Booth 2-3",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-2-4",
+    "name": "LKSLIB Study Booth 2-4",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-2-5",
+    "name": "LKSLIB Study Booth 2-5",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-3-1",
+    "name": "LKSLIB Study Booth 3-1",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 3,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-4-1",
+    "name": "LKSLIB Study Booth 4-1",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-4-2",
+    "name": "LKSLIB Study Booth 4-2",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "LKSLIB-STUDY-BOOTH-4-3",
+    "name": "LKSLIB Study Booth 4-3",
+    "campus": "SMU",
+    "building": "Li Ka Shing Library",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SOA-CLASSROOM-2-1",
+    "name": "SOA Classroom 2-1",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOA-GSR-2-1",
+    "name": "SOA GSR 2-1",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-2-2",
+    "name": "SOA GSR 2-2",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-2-3",
+    "name": "SOA GSR 2-3",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-2-4",
+    "name": "SOA GSR 2-4",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-2-5",
+    "name": "SOA GSR 2-5",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-2-6",
+    "name": "SOA GSR 2-6",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-2-7",
+    "name": "SOA GSR 2-7",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-2-8",
+    "name": "SOA GSR 2-8",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-2-9",
+    "name": "SOA GSR 2-9",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-1",
+    "name": "SOA GSR 3-1",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-10",
+    "name": "SOA GSR 3-10",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-2",
+    "name": "SOA GSR 3-2",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-3",
+    "name": "SOA GSR 3-3",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-4",
+    "name": "SOA GSR 3-4",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-5",
+    "name": "SOA GSR 3-5",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-6",
+    "name": "SOA GSR 3-6",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-7",
+    "name": "SOA GSR 3-7",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-8",
+    "name": "SOA GSR 3-8",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-GSR-3-9",
+    "name": "SOA GSR 3-9",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOA-MEETING-POD-3-1",
+    "name": "SOA Meeting Pod 3-1",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOA-MEETING-POD-3-2",
+    "name": "SOA Meeting Pod 3-2",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-1-1",
+    "name": "SOA Seminar Room 1-1",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-1-2",
+    "name": "SOA Seminar Room 1-2",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-1-3",
+    "name": "SOA Seminar Room 1-3",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-2-1",
+    "name": "SOA Seminar Room 2-1",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-2-2",
+    "name": "SOA Seminar Room 2-2",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-2-3",
+    "name": "SOA Seminar Room 2-3",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-2-4",
+    "name": "SOA Seminar Room 2-4",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-2-5",
+    "name": "SOA Seminar Room 2-5",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-3-1",
+    "name": "SOA Seminar Room 3-1",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-3-2",
+    "name": "SOA Seminar Room 3-2",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-3-3",
+    "name": "SOA Seminar Room 3-3",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-3-4",
+    "name": "SOA Seminar Room 3-4",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOA-SEMINAR-ROOM-3-5",
+    "name": "SOA Seminar Room 3-5",
+    "campus": "SMU",
+    "building": "School of Accountancy",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-CLASSROOM-3-1",
+    "name": "SCIS1 Classroom 3-1",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SCIS1-CLASSROOM-3-2",
+    "name": "SCIS1 Classroom 3-2",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SCIS1-CLASSROOM-B1-1",
+    "name": "SCIS1 Classroom B1-1",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": -1,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SCIS1-GSR-2-1",
+    "name": "SCIS1 GSR 2-1",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-2-2",
+    "name": "SCIS1 GSR 2-2",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-2-3",
+    "name": "SCIS1 GSR 2-3",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-2-4",
+    "name": "SCIS1 GSR 2-4",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-2-5",
+    "name": "SCIS1 GSR 2-5",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-2-6",
+    "name": "SCIS1 GSR 2-6",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-2-7",
+    "name": "SCIS1 GSR 2-7",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-3-1",
+    "name": "SCIS1 GSR 3-1",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-3-2",
+    "name": "SCIS1 GSR 3-2",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-3-3",
+    "name": "SCIS1 GSR 3-3",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-3-4",
+    "name": "SCIS1 GSR 3-4",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-3-5",
+    "name": "SCIS1 GSR 3-5",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-GSR-3-6",
+    "name": "SCIS1 GSR 3-6",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SCIS1-MEETING-POD-3-1",
+    "name": "SCIS1 Meeting Pod 3-1",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SCIS1-MEETING-POD-3-2",
+    "name": "SCIS1 Meeting Pod 3-2",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-2-1",
+    "name": "SCIS1 Seminar Room 2-1",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-2-2",
+    "name": "SCIS1 Seminar Room 2-2",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-2-3",
+    "name": "SCIS1 Seminar Room 2-3",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-2-4",
+    "name": "SCIS1 Seminar Room 2-4",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-3-1",
+    "name": "SCIS1 Seminar Room 3-1",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-3-2",
+    "name": "SCIS1 Seminar Room 3-2",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-3-3",
+    "name": "SCIS1 Seminar Room 3-3",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-3-4",
+    "name": "SCIS1 Seminar Room 3-4",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SCIS1-SEMINAR-ROOM-B1-1",
+    "name": "SCIS1 Seminar Room B1-1",
+    "campus": "SMU",
+    "building": "School of Computing and Information Systems 1",
+    "floor": -1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-CATERING-AREA-3C-NEAR-TO-GSR-3-10",
+    "name": "SOE/SCIS2 Catering Area 3C (Near to GSR 3-10)",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 30,
+    "type": "Catering Area"
+  },
+  {
+    "id": "SOE-SCIS2-CATERING-AREA-3D-NEAR-TO-GSR-3-10",
+    "name": "SOE/SCIS2 Catering Area 3D (Near to GSR 3-10)",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 30,
+    "type": "Catering Area"
+  },
+  {
+    "id": "SOE-SCIS2-CATERING-AREA-3E-NEAR-TO-GSR-3-10",
+    "name": "SOE/SCIS2 Catering Area 3E (Near to GSR 3-10)",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 30,
+    "type": "Catering Area"
+  },
+  {
+    "id": "SOE-SCIS2-CATERING-AREA-3F-NEAR-TO-GSR-3-10",
+    "name": "SOE/SCIS2 Catering Area 3F (Near to GSR 3-10)",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 30,
+    "type": "Catering Area"
+  },
+  {
+    "id": "SOE-SCIS2-CATERING-AREA-4A-NEAR-TO-SR-4-2",
+    "name": "SOE/SCIS2 Catering Area 4A (Near to SR 4-2)",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 30,
+    "type": "Catering Area"
+  },
+  {
+    "id": "SOE-SCIS2-CATERING-AREA-4B-NEAR-TO-SR-4-2",
+    "name": "SOE/SCIS2 Catering Area 4B (Near to SR 4-2)",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 30,
+    "type": "Catering Area"
+  },
+  {
+    "id": "SOE-SCIS2-CATERING-AREA-4C-NEAR-TO-SR-4-4",
+    "name": "SOE/SCIS2 Catering Area 4C (Near to SR 4-4)",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 30,
+    "type": "Catering Area"
+  },
+  {
+    "id": "SOE-SCIS2-CLASSROOM-2-1",
+    "name": "SOE/SCIS2 Classroom 2-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOE-SCIS2-CLASSROOM-2-2",
+    "name": "SOE/SCIS2 Classroom 2-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOE-SCIS2-CLASSROOM-3-1",
+    "name": "SOE/SCIS2 Classroom 3-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOE-SCIS2-CLASSROOM-3-2",
+    "name": "SOE/SCIS2 Classroom 3-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOE-SCIS2-CLASSROOM-3-3",
+    "name": "SOE/SCIS2 Classroom 3-3",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOE-SCIS2-CLASSROOM-4-1",
+    "name": "SOE/SCIS2 Classroom 4-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOE-SCIS2-CLASSROOM-4-3",
+    "name": "SOE/SCIS2 Classroom 4-3",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-1",
+    "name": "SOE/SCIS2 GSR 2-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-10",
+    "name": "SOE/SCIS2 GSR 2-10",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-11",
+    "name": "SOE/SCIS2 GSR 2-11",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-12",
+    "name": "SOE/SCIS2 GSR 2-12",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-13",
+    "name": "SOE/SCIS2 GSR 2-13",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-14",
+    "name": "SOE/SCIS2 GSR 2-14",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-15",
+    "name": "SOE/SCIS2 GSR 2-15",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-16",
+    "name": "SOE/SCIS2 GSR 2-16",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-17",
+    "name": "SOE/SCIS2 GSR 2-17",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-2",
+    "name": "SOE/SCIS2 GSR 2-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-3",
+    "name": "SOE/SCIS2 GSR 2-3",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-4",
+    "name": "SOE/SCIS2 GSR 2-4",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-5",
+    "name": "SOE/SCIS2 GSR 2-5",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-6",
+    "name": "SOE/SCIS2 GSR 2-6",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-7",
+    "name": "SOE/SCIS2 GSR 2-7",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-8",
+    "name": "SOE/SCIS2 GSR 2-8",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-2-9",
+    "name": "SOE/SCIS2 GSR 2-9",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-1",
+    "name": "SOE/SCIS2 GSR 3-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-10",
+    "name": "SOE/SCIS2 GSR 3-10",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-11",
+    "name": "SOE/SCIS2 GSR 3-11",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-12",
+    "name": "SOE/SCIS2 GSR 3-12",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-13",
+    "name": "SOE/SCIS2 GSR 3-13",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-14",
+    "name": "SOE/SCIS2 GSR 3-14",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-15",
+    "name": "SOE/SCIS2 GSR 3-15",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-16",
+    "name": "SOE/SCIS2 GSR 3-16",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-17",
+    "name": "SOE/SCIS2 GSR 3-17",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-18",
+    "name": "SOE/SCIS2 GSR 3-18",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-2",
+    "name": "SOE/SCIS2 GSR 3-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-3",
+    "name": "SOE/SCIS2 GSR 3-3",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-4",
+    "name": "SOE/SCIS2 GSR 3-4",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-5",
+    "name": "SOE/SCIS2 GSR 3-5",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-6",
+    "name": "SOE/SCIS2 GSR 3-6",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-7",
+    "name": "SOE/SCIS2 GSR 3-7",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-8",
+    "name": "SOE/SCIS2 GSR 3-8",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-3-9",
+    "name": "SOE/SCIS2 GSR 3-9",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-4-10",
+    "name": "SOE/SCIS2 GSR 4-10",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-4-4",
+    "name": "SOE/SCIS2 GSR 4-4",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-4-5",
+    "name": "SOE/SCIS2 GSR 4-5",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-4-6",
+    "name": "SOE/SCIS2 GSR 4-6",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-4-7",
+    "name": "SOE/SCIS2 GSR 4-7",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-4-8",
+    "name": "SOE/SCIS2 GSR 4-8",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-GSR-4-9",
+    "name": "SOE/SCIS2 GSR 4-9",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "SOE-SCIS2-MEETING-POD-3-1",
+    "name": "SOE/SCIS2 Meeting Pod 3-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOE-SCIS2-MEETING-POD-3-2",
+    "name": "SOE/SCIS2 Meeting Pod 3-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOE-SCIS2-MEETING-POD-3-3",
+    "name": "SOE/SCIS2 Meeting Pod 3-3",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOE-SCIS2-MEETING-POD-3-4",
+    "name": "SOE/SCIS2 Meeting Pod 3-4",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-1",
+    "name": "SOE/SCIS2 Seminar Room 2-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-10",
+    "name": "SOE/SCIS2 Seminar Room 2-10",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-2",
+    "name": "SOE/SCIS2 Seminar Room 2-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-3",
+    "name": "SOE/SCIS2 Seminar Room 2-3",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-4",
+    "name": "SOE/SCIS2 Seminar Room 2-4",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-5",
+    "name": "SOE/SCIS2 Seminar Room 2-5",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-6",
+    "name": "SOE/SCIS2 Seminar Room 2-6",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-7",
+    "name": "SOE/SCIS2 Seminar Room 2-7",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-8",
+    "name": "SOE/SCIS2 Seminar Room 2-8",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-2-9",
+    "name": "SOE/SCIS2 Seminar Room 2-9",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-1",
+    "name": "SOE/SCIS2 Seminar Room 3-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-10",
+    "name": "SOE/SCIS2 Seminar Room 3-10",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-2",
+    "name": "SOE/SCIS2 Seminar Room 3-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-3",
+    "name": "SOE/SCIS2 Seminar Room 3-3",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-4",
+    "name": "SOE/SCIS2 Seminar Room 3-4",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-5",
+    "name": "SOE/SCIS2 Seminar Room 3-5",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-6",
+    "name": "SOE/SCIS2 Seminar Room 3-6",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-7",
+    "name": "SOE/SCIS2 Seminar Room 3-7",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-8",
+    "name": "SOE/SCIS2 Seminar Room 3-8",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-3-9",
+    "name": "SOE/SCIS2 Seminar Room 3-9",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-4-1",
+    "name": "SOE/SCIS2 Seminar Room 4-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-4-2",
+    "name": "SOE/SCIS2 Seminar Room 4-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-4-3",
+    "name": "SOE/SCIS2 Seminar Room 4-3",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-4-4",
+    "name": "SOE/SCIS2 Seminar Room 4-4",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 4,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-5-1",
+    "name": "SOE/SCIS2 Seminar Room 5-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 5,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-5-2",
+    "name": "SOE/SCIS2 Seminar Room 5-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": 5,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-B1-1",
+    "name": "SOE/SCIS2 Seminar Room B1-1",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": -1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOE-SCIS2-SEMINAR-ROOM-B1-2",
+    "name": "SOE/SCIS2 Seminar Room B1-2",
+    "campus": "SMU",
+    "building": "School of Economics / SCIS 2",
+    "floor": -1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOSS-CIS-CLASSROOM-1-2",
+    "name": "SOSS/CIS Classroom 1-2",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 1,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOSS-CIS-CLASSROOM-3-2",
+    "name": "SOSS/CIS Classroom 3-2",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOSS-CIS-CLASSROOM-3-4",
+    "name": "SOSS/CIS Classroom 3-4",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOSS-CIS-CLASSROOM-3-5",
+    "name": "SOSS/CIS Classroom 3-5",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 3,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "SOSS-CIS-MEETING-POD-B1-1",
+    "name": "SOSS/CIS Meeting Pod B1-1",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": -1,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOSS-CIS-MEETING-POD-B1-2",
+    "name": "SOSS/CIS Meeting Pod B1-2",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": -1,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOSS-CIS-MEETING-POD-B1-3",
+    "name": "SOSS/CIS Meeting Pod B1-3",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": -1,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOSS-CIS-MEETING-POD-B1-4",
+    "name": "SOSS/CIS Meeting Pod B1-4",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": -1,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOSS-CIS-MEETING-POD-B1-5",
+    "name": "SOSS/CIS Meeting Pod B1-5",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": -1,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SOSS-CIS-SEMINAR-ROOM-1-1",
+    "name": "SOSS/CIS Seminar Room 1-1",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOSS-CIS-SEMINAR-ROOM-1-3",
+    "name": "SOSS/CIS Seminar Room 1-3",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOSS-CIS-SEMINAR-ROOM-2-1",
+    "name": "SOSS/CIS Seminar Room 2-1",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOSS-CIS-SEMINAR-ROOM-2-2",
+    "name": "SOSS/CIS Seminar Room 2-2",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOSS-CIS-SEMINAR-ROOM-3-1",
+    "name": "SOSS/CIS Seminar Room 3-1",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOSS-CIS-SEMINAR-ROOM-3-3",
+    "name": "SOSS/CIS Seminar Room 3-3",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SOSS-CIS-SEMINAR-ROOM-B1-1",
+    "name": "SOSS/CIS Seminar Room B1-1",
+    "campus": "SMU",
+    "building": "School of Social Sciences",
+    "floor": -1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "SMUC-ACTIVE-LEARNING-CLASSROOM-3-1",
+    "name": "SMUC Active Learning Classroom 3-1",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 50,
+    "type": "Active Learning Classroom"
+  },
+  {
+    "id": "SMUC-ACTIVE-LEARNING-CLASSROOM-3-2",
+    "name": "SMUC Active Learning Classroom 3-2",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 50,
+    "type": "Active Learning Classroom"
+  },
+  {
+    "id": "SMUC-ACTIVE-LEARNING-CLASSROOM-3-3",
+    "name": "SMUC Active Learning Classroom 3-3",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 50,
+    "type": "Active Learning Classroom"
+  },
+  {
+    "id": "SMUC-ACTIVE-LEARNING-CLASSROOM-4-1",
+    "name": "SMUC Active Learning Classroom 4-1",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 50,
+    "type": "Active Learning Classroom"
+  },
+  {
+    "id": "SMUC-ACTIVE-LEARNING-CLASSROOM-4-2",
+    "name": "SMUC Active Learning Classroom 4-2",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 50,
+    "type": "Active Learning Classroom"
+  },
+  {
+    "id": "SMUC-CHATTERBOX-3-1",
+    "name": "SMUC Chatterbox 3-1",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Chatterbox"
+  },
+  {
+    "id": "SMUC-CHATTERBOX-3-2",
+    "name": "SMUC Chatterbox 3-2",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Chatterbox"
+  },
+  {
+    "id": "SMUC-CHATTERBOX-3-3",
+    "name": "SMUC Chatterbox 3-3",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Chatterbox"
+  },
+  {
+    "id": "SMUC-CHATTERBOX-3-4",
+    "name": "SMUC Chatterbox 3-4",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Chatterbox"
+  },
+  {
+    "id": "SMUC-CHATTERBOX-3-5",
+    "name": "SMUC Chatterbox 3-5",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Chatterbox"
+  },
+  {
+    "id": "SMUC-CHATTERBOX-3-6",
+    "name": "SMUC Chatterbox 3-6",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Chatterbox"
+  },
+  {
+    "id": "SMUC-JAMMING-ROOM",
+    "name": "SMUC Jamming Room",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 1,
+    "capacity": 8,
+    "type": "Jamming Room"
+  },
+  {
+    "id": "SMUC-MEETING-LOUNGE-4-1",
+    "name": "SMUC Meeting Lounge 4-1",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Meeting Lounge"
+  },
+  {
+    "id": "SMUC-MEETING-POD-4-1",
+    "name": "SMUC Meeting Pod 4-1",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SMUC-MEETING-POD-4-2",
+    "name": "SMUC Meeting Pod 4-2",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SMUC-MEETING-POD-4-3",
+    "name": "SMUC Meeting Pod 4-3",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SMUC-MEETING-POD-4-4",
+    "name": "SMUC Meeting Pod 4-4",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SMUC-MEETING-POD-4-5",
+    "name": "SMUC Meeting Pod 4-5",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SMUC-MEETING-POD-4-6",
+    "name": "SMUC Meeting Pod 4-6",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SMUC-MEETING-POD-4-7",
+    "name": "SMUC Meeting Pod 4-7",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-2-1",
+    "name": "SMUC Study Booth 2-1",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-2-2",
+    "name": "SMUC Study Booth 2-2",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 2,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-3-1",
+    "name": "SMUC Study Booth 3-1",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-3-2",
+    "name": "SMUC Study Booth 3-2",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-3-3",
+    "name": "SMUC Study Booth 3-3",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-3-4",
+    "name": "SMUC Study Booth 3-4",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-3-5",
+    "name": "SMUC Study Booth 3-5",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-3-6",
+    "name": "SMUC Study Booth 3-6",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-3-7",
+    "name": "SMUC Study Booth 3-7",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 3,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-1",
+    "name": "SMUC Study Booth 4-1",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-10",
+    "name": "SMUC Study Booth 4-10",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-2",
+    "name": "SMUC Study Booth 4-2",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-3",
+    "name": "SMUC Study Booth 4-3",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-4",
+    "name": "SMUC Study Booth 4-4",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-5",
+    "name": "SMUC Study Booth 4-5",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-6",
+    "name": "SMUC Study Booth 4-6",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-7",
+    "name": "SMUC Study Booth 4-7",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-8",
+    "name": "SMUC Study Booth 4-8",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "SMUC-STUDY-BOOTH-4-9",
+    "name": "SMUC Study Booth 4-9",
+    "campus": "SMU",
+    "building": "SMU Connection",
+    "floor": 4,
+    "capacity": 1,
+    "type": "Study Booth"
+  },
+  {
+    "id": "KGC-MEETING-POD-3-01",
+    "name": "KGC Meeting Pod 3-01",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "KGC-4-01-PR",
+    "name": "KGC-4.01-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-02-PR",
+    "name": "KGC-4.02-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-03-PR",
+    "name": "KGC-4.03-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-04-PR",
+    "name": "KGC-4.04-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-05-PR",
+    "name": "KGC-4.05-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-06-PR",
+    "name": "KGC-4.06-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-07-PR",
+    "name": "KGC-4.07-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-08-PR",
+    "name": "KGC-4.08-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-09-PR",
+    "name": "KGC-4.09-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-10-PR",
+    "name": "KGC-4.10-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-11-PR",
+    "name": "KGC-4.11-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-12-PR",
+    "name": "KGC-4.12-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "KGC-4-13-PR",
+    "name": "KGC-4.13-PR",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 4,
+    "capacity": 10,
+    "type": "Project Room"
+  },
+  {
+    "id": "YPHSL-CLASSROOM-1-02",
+    "name": "YPHSL Classroom 1-02",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 1,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "YPHSL-CLASSROOM-B1-09",
+    "name": "YPHSL Classroom B1-09",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "YPHSL-CLASSROOM-B1-13",
+    "name": "YPHSL Classroom B1-13",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "YPHSL-CLASSROOM-B2-03",
+    "name": "YPHSL Classroom B2-03",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -2,
+    "capacity": 40,
+    "type": "Classroom"
+  },
+  {
+    "id": "YPHSL-GSR-2-07",
+    "name": "YPHSL GSR 2-07",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-2-12",
+    "name": "YPHSL GSR 2-12",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-2-13",
+    "name": "YPHSL GSR 2-13",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-2-14",
+    "name": "YPHSL GSR 2-14",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-3-03",
+    "name": "YPHSL GSR 3-03",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-3-04",
+    "name": "YPHSL GSR 3-04",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-3-05",
+    "name": "YPHSL GSR 3-05",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-3-06",
+    "name": "YPHSL GSR 3-06",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-3-07",
+    "name": "YPHSL GSR 3-07",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-3-08",
+    "name": "YPHSL GSR 3-08",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-02",
+    "name": "YPHSL GSR B1-02",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-03",
+    "name": "YPHSL GSR B1-03",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-04",
+    "name": "YPHSL GSR B1-04",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-05",
+    "name": "YPHSL GSR B1-05",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-06",
+    "name": "YPHSL GSR B1-06",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-07",
+    "name": "YPHSL GSR B1-07",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-08",
+    "name": "YPHSL GSR B1-08",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-10",
+    "name": "YPHSL GSR B1-10",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-11",
+    "name": "YPHSL GSR B1-11",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-GSR-B1-12",
+    "name": "YPHSL GSR B1-12",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 8,
+    "type": "Group Study Room"
+  },
+  {
+    "id": "YPHSL-MEETING-POD-B1-01",
+    "name": "YPHSL Meeting Pod B1-01",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 4,
+    "type": "Meeting Pod"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-2-01",
+    "name": "YPHSL Seminar Room 2-01",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-2-02",
+    "name": "YPHSL Seminar Room 2-02",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-2-03",
+    "name": "YPHSL Seminar Room 2-03",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-2-04",
+    "name": "YPHSL Seminar Room 2-04",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-2-05",
+    "name": "YPHSL Seminar Room 2-05",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-2-11",
+    "name": "YPHSL Seminar Room 2-11",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-2-15",
+    "name": "YPHSL Seminar Room 2-15",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-2-16",
+    "name": "YPHSL Seminar Room 2-16",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-3-01",
+    "name": "YPHSL Seminar Room 3-01",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-3-02",
+    "name": "YPHSL Seminar Room 3-02",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-3-09",
+    "name": "YPHSL Seminar Room 3-09",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-3-10",
+    "name": "YPHSL Seminar Room 3-10",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-3-11",
+    "name": "YPHSL Seminar Room 3-11",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-3-12",
+    "name": "YPHSL Seminar Room 3-12",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": 3,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-B1-01",
+    "name": "YPHSL Seminar Room B1-01",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -1,
+    "capacity": 20,
+    "type": "Seminar Room"
+  },
+  {
+    "id": "YPHSL-SEMINAR-ROOM-B2-01",
+    "name": "YPHSL Seminar Room B2-01",
+    "campus": "SMU",
+    "building": "Yong Pung How School of Law / Kwa Geok Choo Law Library",
+    "floor": -2,
+    "capacity": 20,
+    "type": "Seminar Room"
+  }
+]
