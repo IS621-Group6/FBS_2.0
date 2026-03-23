@@ -1378,25 +1378,26 @@ app.get("/api/admin/logs", authenticateToken, (req, res) => {
   }
 });
 
-app.delete("/__debug/delete-test", (req, res) => {
-  res.json({ ok: true, method: "DELETE" })
-})
+if (process.env.NODE_ENV !== 'production') {
+  app.delete("/__debug/delete-test", (req, res) => {
+    res.json({ ok: true, method: "DELETE" })
+  });
 
-app.post("/__debug/login", (req, res) => {
-  const { email, role } = req.body || {};
-  if (!email) {
-    return res.status(400).json({ message: "Email required" });
-  }
-  const token = jwt.sign({ email, role: role || 'user' }, JWT_SECRET, { expiresIn: '1h' });
-  res.json({ token });
-});
+  app.post("/__debug/login", (req, res) => {
+    const { email, role } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+    const token = jwt.sign({ email, role: role || 'user' }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token });
+  });
+
+  app.get("/__debug/routes", (req, res) => res.json({ ok: true }));
+}
 
 app.get("/", (req, res) => {
   res.send("FBS 2.0 backend running");
 });
-
-app.get("/__debug/routes", (req, res) => res.json({ ok: true }));
-
 app.listen(3001, () => {
   console.log("Backend running on port 3001");
 });
