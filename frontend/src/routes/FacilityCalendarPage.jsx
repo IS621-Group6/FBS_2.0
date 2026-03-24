@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import CalendarGrid from '../components/CalendarGrid'
 import { getAvailability, getFacility } from '../lib/api'
-import { isoToday, overlaps, parseTimeToMinutes } from '../lib/time'
+import { formatTimeLabel, isPastSingaporeDateTime, isoToday, overlaps, parseTimeToMinutes } from '../lib/time'
 
 const MAX_BOOKING_MINUTES = 180
 
@@ -77,6 +77,33 @@ export default function FacilityCalendarPage() {
     })
   }, [selectedStart, end, reservations])
 
+  const isPastSelection = useMemo(() => {
+    return isPastSingaporeDateTime(date, selectedStart)
+  }, [date, selectedStart])
+
+  const availableStartOptions = useMemo(() => {
+    const options = []
+    for (let slotMin = 0; slotMin < 24 * 60; slotMin += 30) {
+      const label = formatTimeLabel(slotMin)
+      const endMin = slotMin + Number(duration)
+      if (endMin > 24 * 60) continue
+      if (isPastSingaporeDateTime(date, label)) continue
+      const blocked = reservations.some((r) => {
+        const rStart = parseTimeToMinutes(r.start)
+        const rEnd = parseTimeToMinutes(r.end)
+        return overlaps(slotMin, endMin, rStart, rEnd)
+      })
+      if (!blocked) options.push(label)
+    }
+    return options
+  }, [date, duration, reservations])
+
+  useEffect(() => {
+    if (!availableStartOptions.length) return
+    if (availableStartOptions.includes(selectedStart)) return
+    setSelectedStart(availableStartOptions[0])
+  }, [availableStartOptions, selectedStart])
+
   useEffect(() => {
     let ignore = false
     getFacility(id)
@@ -118,7 +145,7 @@ export default function FacilityCalendarPage() {
 
   const proceed = () => {
     // prevent past-date navigation, double-check even though backend also validates
-    if (date < isoToday()) {
+    if (date < isoToday() || isPastSelection) {
       alert("You can't book a past date/time. Please choose a future slot.")
       return
     }
@@ -196,10 +223,12 @@ export default function FacilityCalendarPage() {
                   </div>
                 </div>
 
-                {hasOverlap && (
+                {(hasOverlap || isPastSelection) && (
                   <div className="alert alertDanger">
                     <div style={{ color: 'var(--danger)', fontSize: 14 }}>
-                      ⚠️ This timeslot overlaps with an existing booking. Please choose a different time or duration.
+                      {isPastSelection
+                        ? '⚠️ This timeslot has already passed. Please choose a future time.'
+                        : '⚠️ This timeslot overlaps with an existing booking. Please choose a different time or duration.'}
                     </div>
                   </div>
                 )}
@@ -207,7 +236,7 @@ export default function FacilityCalendarPage() {
                 <button
                   className="btn btnPrimary"
                   onClick={proceed}
-                  disabled={!selectedStart || !end || isLoading || hasOverlap || date < isoToday()}
+                  disabled={!selectedStart || !end || isLoading || hasOverlap || isPastSelection || date < isoToday()}
                 >
                   Continue to confirmation
                 </button>
@@ -229,6 +258,7 @@ export default function FacilityCalendarPage() {
                   selectedDuration={duration}
                   onSelectStart={setSelectedStart}
                   businessHours={{ start: '00:00', end: '24:00' }}
+                  isSlotDisabled={({ label }) => isPastSingaporeDateTime(date, label)}
                 />
               )}
             </section>

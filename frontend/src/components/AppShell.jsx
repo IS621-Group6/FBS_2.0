@@ -1,8 +1,41 @@
 import { Link, NavLink } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import useAuth from '../lib/useAuth'
+import { getMyCredits } from '../lib/api'
 
 export default function AppShell({ children }) {
   const { user, logout } = useAuth()
+  const [creditsRemaining, setCreditsRemaining] = useState(null)
+
+  useEffect(() => {
+    let isActive = true
+
+    if (!user?.token) {
+      setCreditsRemaining(null)
+      return () => {
+        isActive = false
+      }
+    }
+
+    getMyCredits()
+      .then((payload) => {
+        if (!isActive) return
+        setCreditsRemaining(
+          typeof payload?.creditsRemaining === 'number' ? payload.creditsRemaining : null
+        )
+      })
+      .catch(() => {
+        if (!isActive) return
+        setCreditsRemaining(null)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [user?.token])
+
+  const displayName = user?.name || user?.email || 'Signed out'
+  const displayRole = user?.role ? `${user.role.charAt(0).toUpperCase()}${user.role.slice(1)}` : null
 
   return (
     <div className="appRoot">
@@ -36,7 +69,14 @@ export default function AppShell({ children }) {
           <div className="navGrow" />
 
           <div className="navRight">
-            <span className="navEmail">{user?.email || 'Signed out'}</span>
+            <div className="navIdentity">
+              <span className="navName">{displayName}</span>
+              {user?.email && <span className="navEmail">{user.email}</span>}
+              <span className="navMeta">
+                {displayRole || 'User'}
+                {typeof creditsRemaining === 'number' ? ` • Credits remaining: ${creditsRemaining}` : ''}
+              </span>
+            </div>
             <button className="btn btnDanger" type="button" onClick={logout}>
               Logout
             </button>

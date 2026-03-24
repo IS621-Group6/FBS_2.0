@@ -6,9 +6,24 @@ describe('auth storage helpers', () => {
   })
 
   test('storeUser and getStoredUser roundtrip', () => {
-    const stored = storeUser('test@test.com', 'token-123')
-    expect(stored).toEqual({ email: 'test@test.com', token: 'token-123' })
-    expect(getStoredUser()).toEqual({ email: 'test@test.com', token: 'token-123' })
+    const stored = storeUser({
+      email: 'test@test.com',
+      token: 'token-123',
+      name: 'Test User',
+      role: 'student',
+    })
+    expect(stored).toEqual({
+      email: 'test@test.com',
+      token: 'token-123',
+      name: 'Test User',
+      role: 'student',
+    })
+    expect(getStoredUser()).toEqual({
+      email: 'test@test.com',
+      token: 'token-123',
+      name: 'Test User',
+      role: 'student',
+    })
   })
 
   test('clearStoredUser removes auth keys', () => {
@@ -18,6 +33,8 @@ describe('auth storage helpers', () => {
     expect(localStorage.getItem(AUTH_STORAGE.loggedInKey)).toBeNull()
     expect(localStorage.getItem(AUTH_STORAGE.emailKey)).toBeNull()
     expect(localStorage.getItem(AUTH_STORAGE.tokenKey)).toBeNull()
+    expect(localStorage.getItem(AUTH_STORAGE.nameKey)).toBeNull()
+    expect(localStorage.getItem(AUTH_STORAGE.roleKey)).toBeNull()
     expect(getStoredUser()).toBeNull()
   })
 

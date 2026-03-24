@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import { createBooking, getFacility } from '../lib/api'
-import { isoToday, parseTimeToMinutes } from '../lib/time'
+import { isPastSingaporeDateTime, isoToday, parseTimeToMinutes } from '../lib/time'
 import useAuth from '../lib/useAuth'
 
 const MAX_BOOKING_MINUTES = 180
@@ -23,6 +23,7 @@ export default function BookingConfirmPage() {
   const [ack, setAck] = useState(false)
   const [reason, setReason] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const reasonTrimmed = useMemo(() => reason.trim(), [reason])
 
@@ -38,8 +39,9 @@ export default function BookingConfirmPage() {
   const dateError = useMemo(() => {
     if (!date) return 'Invalid booking date'
     if (date < isoToday()) return "You can't book a past date/time"
+    if (isPastSingaporeDateTime(date, start)) return "You can't book a past date/time"
     return ''
-  }, [date])
+  }, [date, start])
 
   const calendarUrl = useMemo(() => {
     const next = new URLSearchParams()
@@ -71,7 +73,7 @@ export default function BookingConfirmPage() {
     }
   }, [facilityId])
 
-  const userRole = user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff'
+  const userRole = user.role || (user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff')
 
   const submit = async () => {
     if (durationError || dateError) {
@@ -82,6 +84,7 @@ export default function BookingConfirmPage() {
       return
     }
 
+    setSubmitError('')
     setIsSubmitting(true)
 
     try {
@@ -100,8 +103,7 @@ export default function BookingConfirmPage() {
         alert('⚠️ Booking Conflict\n\nThis timeslot was just booked by another user.\n\nPlease select a different time slot.')
         navigate(calendarUrl, { replace: true })
       } else {
-        // Send user back to pick a new time for other errors
-        navigate(calendarUrl, { replace: true })
+        setSubmitError(e?.message || 'Booking failed. Please choose another time or try again.')
       }
     } finally {
       setIsSubmitting(false)
@@ -148,6 +150,13 @@ export default function BookingConfirmPage() {
                 <div className="alert alertDanger" role="status" aria-live="polite">
                   <div className="alertTitle">Cannot book this time</div>
                   <div className="muted">{durationError || dateError}.</div>
+                </div>
+              ) : null}
+
+              {submitError ? (
+                <div className="alert alertDanger" role="alert" aria-live="assertive">
+                  <div className="alertTitle">Booking failed</div>
+                  <div className="muted">{submitError}</div>
                 </div>
               ) : null}
 
