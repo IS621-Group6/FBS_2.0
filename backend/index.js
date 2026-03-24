@@ -87,6 +87,23 @@ if (isProduction && !envJwtSecret) {
 }
 
 const JWT_SECRET = envJwtSecret || "demo-secret-key";
+const AUTH_USERS = new Map(
+  [
+    {
+      email: "alicia.tan.2027@smu.edu.sg",
+      password: "password",
+      name: "Alicia Tan",
+      role: "student",
+    },
+    {
+      email: "demo@smu.edu.sg",
+      password: "demo123",
+      name: "Demo User",
+      role: "student",
+    },
+  ].map((profile) => [profile.email, profile])
+);
+
 function handleLogin(req, res) {
   const { email, password } = req.body || {};
   if (!email || !password) {
@@ -106,7 +123,8 @@ function handleLogin(req, res) {
   });
   }
 
-  const valid = validatePassword(normalizedEmail, password);
+  const profile = getAuthProfile(normalizedEmail);
+  const valid = Boolean(profile) && validatePassword(profile, password);
   if (!valid) {
     const failure = recordFailedLogin(normalizedEmail);
 
@@ -129,14 +147,24 @@ function handleLogin(req, res) {
   }
 
   resetFailureCount(normalizedEmail);
-  const token = jwt.sign({ email: normalizedEmail, role: "user" }, JWT_SECRET, { expiresIn: "1h" });
-  return res.json({ token, email: normalizedEmail, expiresIn: 3600 });
+  const token = jwt.sign({ email: normalizedEmail, role: profile.role }, JWT_SECRET, { expiresIn: "1h" });
+  return res.json({
+    token,
+    email: normalizedEmail,
+    name: profile.name,
+    role: profile.role,
+    expiresIn: 3600,
+  });
 }
 
 app.post(["/api/auth/login", "/api/login"], handleLogin);
 
-function validatePassword(email, password) {
-  return email === "demo@smu.edu.sg" && password === "demo123";
+function getAuthProfile(email) {
+  return AUTH_USERS.get(String(email || "").trim().toLowerCase()) || null;
+}
+
+function validatePassword(profile, password) {
+  return profile.password === password;
 }
 
 function authenticateToken(req, res, next) {
