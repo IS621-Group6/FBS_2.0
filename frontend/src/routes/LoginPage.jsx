@@ -7,7 +7,7 @@ export default function LoginPage({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
   const [lockoutUntil, setLockoutUntil] = useState(null)
   const [now, setNow] = useState(Date.now())
  
