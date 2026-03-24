@@ -9,6 +9,14 @@ const { formatBookingConfirmation } = require("./emailTemplates");
 const compression = require("compression");
 const NodeCache = require("node-cache");
 
+const {
+  recordFailedLogin,
+  resetFailureCount,
+  isLockedOut,
+  getRemainingLockoutMs,
+  MAX_LOGIN_FAILURES,
+} = require("./authLimiter");
+
 const app = express();
 const globalLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
@@ -78,6 +86,52 @@ if (isProduction && !envJwtSecret) {
 }
 
 const JWT_SECRET = envJwtSecret || "demo-secret-key";
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  if (isLockedOut(normalizedEmail)) {
+    const remainingSec = Math.ceil(getRemainingLockoutMs(normalizedEmail) / 1000);
+    return res.status(429).json({
+      error: "LOGIN_LOCKED",
+      message: `Account temporarily locked. Try again in ${remainingSec} seconds.`,
+      retryAfterSeconds: remainingSec,
+    });
+  }
+
+  const valid = validatePassword(normalizedEmail, password);
+  if (!valid) {
+    const failure = recordFailedLogin(normalizedEmail);
+
+    if (failure.lockedUntil && Date.now() < failure.lockedUntil) {
+      const remainingSec = Math.ceil(getRemainingLockoutMs(normalizedEmail) / 1000);
+      return res.status(429).json({
+        error: "LOGIN_LOCKED",
+        message: `Account locked after ${MAX_LOGIN_FAILURES} failed attempts.`,
+        retryAfterSeconds: remainingSec,
+      });
+    }
+
+    return res.status(401).json({
+      error: "INVALID_CREDENTIALS",
+      message: "Invalid email or password",
+      attemptsRemaining: Math.max(0, MAX_LOGIN_FAILURES - failure.count),
+    });
+  }
+
+  resetFailureCount(normalizedEmail);
+  const token = jwt.sign({ email: normalizedEmail, role: "user" }, JWT_SECRET, { expiresIn: "1h" });
+  return res.json({ token, email: normalizedEmail, expiresIn: 3600 });
+});
+
+function validatePassword(email, password) {
+  return email === "demo@smu.edu.sg" && password === "demo123";
+}
+
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
