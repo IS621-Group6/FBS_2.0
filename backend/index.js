@@ -16,6 +16,7 @@ const {
   getRemainingLockoutMs,
   MAX_LOGIN_FAILURES,
 } = require("./authLimiter");
+const validateBookingInput = require("./middleware/validateBookingInput");
 
 const app = express();
 const globalLimiter = rateLimit({
@@ -95,12 +96,14 @@ app.post("/api/auth/login", (req, res) => {
   const normalizedEmail = String(email).trim().toLowerCase();
 
   if (isLockedOut(normalizedEmail)) {
-    const remainingSec = Math.ceil(getRemainingLockoutMs(normalizedEmail) / 1000);
-    return res.status(429).json({
-      error: "LOGIN_LOCKED",
-      message: `Account temporarily locked. Try again in ${remainingSec} seconds.`,
-      retryAfterSeconds: remainingSec,
-    });
+  const remainingSec = Math.ceil(getRemainingLockoutMs(normalizedEmail) / 1000);
+  const remainingMin = Math.ceil(remainingSec / 60);
+
+  return res.status(429).json({
+    error: "LOGIN_LOCKED",
+    message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
+    retryAfterSeconds: remainingSec,
+  });
   }
 
   const valid = validatePassword(normalizedEmail, password);
@@ -108,13 +111,15 @@ app.post("/api/auth/login", (req, res) => {
     const failure = recordFailedLogin(normalizedEmail);
 
     if (failure.lockedUntil && Date.now() < failure.lockedUntil) {
-      const remainingSec = Math.ceil(getRemainingLockoutMs(normalizedEmail) / 1000);
-      return res.status(429).json({
-        error: "LOGIN_LOCKED",
-        message: `Account locked after ${MAX_LOGIN_FAILURES} failed attempts.`,
-        retryAfterSeconds: remainingSec,
-      });
-    }
+  const remainingSec = Math.ceil(getRemainingLockoutMs(normalizedEmail) / 1000);
+  const remainingMin = Math.ceil(remainingSec / 60);
+
+  return res.status(429).json({
+    error: "LOGIN_LOCKED",
+    message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
+    retryAfterSeconds: remainingSec,
+  });
+}
 
     return res.status(401).json({
       error: "INVALID_CREDENTIALS",
@@ -1055,7 +1060,7 @@ app.get("/api/bookings", authenticateToken, (req, res) => {
   res.json({ items });
 });
 
-app.post("/api/bookings", authenticateToken, (req, res) => {
+app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) => {
   const { facilityId, date, start, end, reason } = req.body || {};
   // role may come from a header or the body; default to student for sanity
   const userRole = String(req.user?.role || req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
@@ -1257,7 +1262,7 @@ app.post("/api/bookings", authenticateToken, (req, res) => {
   res.status(201).json(booking);
 });
 
-app.put("/api/bookings/:id", authenticateToken, (req, res) => {
+app.put("/api/bookings/:id", authenticateToken, validateBookingInput, (req, res) => {
   const bookingIdRaw = String(req.params.id || "").trim();
   const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
   const { date, start, end } = req.body || {};
