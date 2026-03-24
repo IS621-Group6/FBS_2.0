@@ -2,6 +2,7 @@ const NodeCache = require("node-cache");
 
 const MAX_LOGIN_FAILURES = Number(process.env.MAX_LOGIN_FAILURES) || 5;
 const LOCKOUT_DURATION_MS = Number(process.env.LOGIN_LOCKOUT_MS) || 15 * 60 * 1000;
+
 const cache = new NodeCache({ stdTTL: 60 * 60, checkperiod: 120 });
 
 const normalizeEmail = (email) => String(email || "").trim().toLowerCase();

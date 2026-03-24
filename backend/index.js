@@ -1,9 +1,13 @@
-const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { getDb, sqliteHealth } = require("./sqlite");
 const rateLimit = require("express-rate-limit");
+
+const { formatBookingConfirmation } = require("./emailTemplates");
+
+const compression = require("compression");
+const NodeCache = require("node-cache");
 
 const {
   recordFailedLogin,
@@ -12,31 +16,7 @@ const {
   getRemainingLockoutMs,
   MAX_LOGIN_FAILURES,
 } = require("./authLimiter");
-const { hashPasswordSync, normalizeEmail, resolveBookingRole, verifyPassword } = require("./authUtils");
-const { insertAuditLog, selectAuditLogs } = require("./auditLogs");
-const { FACILITIES, SINGLE_CAMPUS_LABEL, facilityTypeForCapacity } = require("./facilityData");
-const {
-  STUDENT_BOOKING_CREDIT_COST,
-  deductCredits,
-  getCancellationCreditRefund,
-  getCostCentre,
-  getStudentBalance,
-  refundCredits,
-} = require("./finance");
 const validateBookingInput = require("./middleware/validateBookingInput");
-const { createRequestAuthHelpers } = require("./requestAuth");
-const { buildSearchCacheKey, rankFacilities } = require("./searchUtils");
-const {
-  isIsoYmd,
-  overlaps,
-  singaporeTodayIso,
-  toHHMM,
-  toIsoUtcFromDateAndMinutes,
-  toMinutes,
-} = require("./timeUtils");
-
-const compression = require("compression");
-const NodeCache = require("node-cache");
 
 const app = express();
 const globalLimiter = rateLimit({
@@ -107,29 +87,274 @@ if (isProduction && !envJwtSecret) {
 }
 
 const JWT_SECRET = envJwtSecret || "demo-secret-key";
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
 
-const { authenticateToken, resolveRequestUserEmail } = createRequestAuthHelpers({
-  jwtSecret: JWT_SECRET,
-  normalizeEmail,
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  if (isLockedOut(normalizedEmail)) {
+  const remainingSec = Math.ceil(getRemainingLockoutMs(normalizedEmail) / 1000);
+  const remainingMin = Math.ceil(remainingSec / 60);
+
+  return res.status(429).json({
+    error: "LOGIN_LOCKED",
+    message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
+    retryAfterSeconds: remainingSec,
+  });
+  }
+
+  const valid = validatePassword(normalizedEmail, password);
+  if (!valid) {
+    const failure = recordFailedLogin(normalizedEmail);
+
+    if (failure.lockedUntil && Date.now() < failure.lockedUntil) {
+  const remainingSec = Math.ceil(getRemainingLockoutMs(normalizedEmail) / 1000);
+  const remainingMin = Math.ceil(remainingSec / 60);
+
+  return res.status(429).json({
+    error: "LOGIN_LOCKED",
+    message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
+    retryAfterSeconds: remainingSec,
+  });
+}
+
+    return res.status(401).json({
+      error: "INVALID_CREDENTIALS",
+      message: "Invalid email or password",
+      attemptsRemaining: Math.max(0, MAX_LOGIN_FAILURES - failure.count),
+    });
+  }
+
+  resetFailureCount(normalizedEmail);
+  const token = jwt.sign({ email: normalizedEmail, role: "user" }, JWT_SECRET, { expiresIn: "1h" });
+  return res.json({ token, email: normalizedEmail, expiresIn: 3600 });
 });
+
+function validatePassword(email, password) {
+  return email === "demo@smu.edu.sg" && password === "demo123";
+}
+
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ message: 'Access token required' });
+  }
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(401).json({ message: 'Token expired' });
+      }
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    req.user = user;
+    next();
+  });
+}
+
+function getTokenUserFromRequest(req) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  if (!token) {
+    return { user: null, error: null };
+  }
+
+  try {
+    const user = jwt.verify(token, JWT_SECRET);
+    return { user, error: null };
+  } catch (error) {
+    if (error?.name === "TokenExpiredError") {
+      return { user: null, error: { status: 401, message: "Token expired" } };
+    }
+
+    return { user: null, error: { status: 401, message: "Invalid token" } };
+  }
+}
+
+function resolveRequestUserEmail(req, { allowBodyUserEmail = false } = {}) {
+  const tokenResult = getTokenUserFromRequest(req);
+  if (tokenResult.error) {
+    return tokenResult;
+  }
+
+  const tokenEmail = String(tokenResult.user?.email || "").trim();
+  if (tokenEmail) {
+    return { user: tokenResult.user, email: tokenEmail.toLowerCase(), error: null };
+  }
+
+  const headerEmail = String(req.headers["x-user-email"] || "").trim();
+  if (headerEmail) {
+    return { user: null, email: headerEmail.toLowerCase(), error: null };
+  }
+
+  if (allowBodyUserEmail) {
+    const bodyEmail = String(req.body?.userEmail || "").trim();
+    if (bodyEmail) {
+      return { user: null, email: bodyEmail.toLowerCase(), error: null };
+    }
+  }
+
+  return { user: null, email: "", error: null };
+}
+
+function insertAuditLog(db, action, userEmail, bookingId, details) {
+  try {
+    db.prepare(
+      `INSERT INTO audit_logs (action, user_email, booking_id, details) VALUES (?, ?, ?, ?)`
+    ).run(action, userEmail, bookingId, JSON.stringify(details));
+  } catch (error) {
+    if (String(error?.message || "").includes("no such table: audit_logs")) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+function selectAuditLogs(db, whereSql, params) {
+  try {
+    return db.prepare(`SELECT * FROM audit_logs ${whereSql} ORDER BY timestamp DESC`).all(...params);
+  } catch (error) {
+    if (String(error?.message || "").includes("no such table: audit_logs")) {
+      return [];
+    }
+
+    throw error;
+  }
+}
+
+function pad2(n) {
+  return String(n).padStart(2, "0");
+}
+
+function singaporeTodayIso() {
+  // Prefer Intl-based computation when available.
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Singapore",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+
+    const day = parts.find((p) => p.type === "day")?.value;
+    const month = parts.find((p) => p.type === "month")?.value;
+    const year = parts.find((p) => p.type === "year")?.value;
+    if (day && month && year) {
+      return `${year}-${month}-${day}`;
+    }
+  } catch (e) {
+    // Fall through to deterministic UTC+8 fallback below.
+  }
+
+  // Deterministic fallback: compute Singapore-local date as UTC+8.
+  const now = new Date();
+  const utcMillis = now.getTime() + now.getTimezoneOffset() * 60 * 1000;
+  const singaporeMillis = utcMillis + 8 * 60 * 60 * 1000;
+  const singaporeDate = new Date(singaporeMillis);
+
+  const year = singaporeDate.getUTCFullYear();
+  const month = pad2(singaporeDate.getUTCMonth() + 1);
+  const day = pad2(singaporeDate.getUTCDate());
+  return `${year}-${month}-${day}`;
+}
+
+function isIsoYmd(value) {
+  const str = String(value || "").trim();
+
+  // First, ensure the basic YYYY-MM-DD shape.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    return false;
+  }
+
+  const [yearStr, monthStr, dayStr] = str.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day)
+  ) {
+    return false;
+  }
+
+  // Use UTC to avoid timezone-related date shifts.
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (Number.isNaN(date.getTime())) {
+    return false;
+  }
+
+  // Round-trip to canonical ISO date and ensure it matches exactly.
+  const isoYmd = date.toISOString().slice(0, 10);
+  return isoYmd === str;
+}
+
+function toMinutes(hhmm) {
+  if (!hhmm) return null;
+  const [h, m] = String(hhmm).split(":").map(Number);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  return h * 60 + m;
+}
+
+function toHHMM(minutesFromMidnight) {
+  const h = Math.floor(minutesFromMidnight / 60);
+  const m = minutesFromMidnight % 60;
+  return `${pad2(h)}:${pad2(m)}`;
+}
+
+function toIsoUtcFromDateAndMinutes(dateYmd, minutesFromMidnight) {
+  const raw = String(dateYmd || '').trim();
+  const m = raw.match(/^\d{4}-\d{2}-\d{2}$/);
+  if (!m) return null;
+  const [yy, mm, dd] = raw.split('-').map((x) => Number(x));
+  if (!Number.isFinite(yy) || !Number.isFinite(mm) || !Number.isFinite(dd)) return null;
+  const mins = Number(minutesFromMidnight);
+  if (!Number.isFinite(mins)) return null;
+  const base = Date.UTC(yy, mm - 1, dd, 0, 0, 0);
+  const dt = new Date(base + mins * 60 * 1000);
+  const Y = dt.getUTCFullYear();
+  const M = pad2(dt.getUTCMonth() + 1);
+  const D = pad2(dt.getUTCDate());
+  const H = pad2(dt.getUTCHours());
+  const Min = pad2(dt.getUTCMinutes());
+  return `${Y}-${M}-${D}T${H}:${Min}:00Z`;
+}
+
+function overlaps(aStart, aEnd, bStart, bEnd) {
+  return aStart < bEnd && aEnd > bStart;
+}
 
 const MAX_BOOKING_MINUTES = 180;
 
-function respondWithCachedSearch(res, cacheKey, payload, status = "MISS") {
-  res.set("X-Search-Cache", status);
-  if (status === "MISS") {
-    searchCache.set(cacheKey, payload);
-  }
-  res.json(payload);
+const SINGLE_CAMPUS_LABEL = "SMU";
+const { buildSeedFacilities } = require("./facilityCatalog");
+const { computeEquipmentForFacility } = require("./equipment");
+
+function facilityTypeForCapacity(capacity) {
+  const c = Number(capacity) || 0;
+  if (c <= 1) return "Phone Booth";
+  if (c <= 2) return "Study Booth";
+  if (c <= 4) return "Meeting Pod";
+  if (c <= 8) return "Group Study Room";
+  if (c <= 16) return "Seminar Room";
+  return "Classroom";
 }
 
-function invalidateSearchCache() {
-  searchCache.flushAll();
+function makeFacilities() {
+  const base = buildSeedFacilities({ campusLabel: SINGLE_CAMPUS_LABEL });
+  return base.map((f) => ({
+    ...f,
+    equipment: computeEquipmentForFacility({ facilityName: f.name, facilityType: f.type }),
+  }));
 }
 
-function createSystemPasswordHash(email) {
-  return hashPasswordSync(`system:${email}:${crypto.randomUUID()}`);
-}
+const FACILITIES = makeFacilities();
 
 /**
  * In-memory bookings for demo purposes.
@@ -277,7 +502,7 @@ app.get('/api/debug', (req, res) => {
   res.json(out);
 });
 
-app.get("/api/facilities", searchLimiter, async (req, res) => {
+app.get("/api/facilities", async (req, res) => {
   const q = String(req.query.q || "").trim().toLowerCase();
   const building = String(req.query.building || "")
     .split(",")
@@ -345,18 +570,16 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
   const hasValidAvailabilityWindow = shouldFilterByAvailability && slotStartIso && slotEndIso;
   const page = Math.max(1, Number(req.query.page || 1));
   const pageSize = Math.min(50, Math.max(1, Number(req.query.pageSize || 12)));
-  const cacheKey = buildSearchCacheKey(req.query);
-  const cachedResponse = searchCache.get(cacheKey);
-
-  if (cachedResponse) {
-    respondWithCachedSearch(res, cacheKey, cachedResponse, "HIT");
-    return;
-  }
 
   const db = getDb();
   if (db) {
     try {
       const clauses = ["is_active = 1"];
+      if (q) {
+        clauses.push(
+          `(facility_code LIKE ? OR facility_name LIKE ? OR building LIKE ?)`
+        );
+      }
       if (capacityMin > 0) {
         clauses.push(`capacity >= ?`);
       }
@@ -399,6 +622,11 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
       let whereSql = "";
       if (clauses.length) {
         whereSql = `WHERE ${clauses.join(" AND ")}`;
+        // For the q clause we need three copies of the same parameter.
+        if (q) {
+          const qLike = `%${q}%`;
+          whereParams.push(qLike, qLike, qLike);
+        }
         if (capacityMin > 0) whereParams.push(capacityMin);
         if (capacityMax > 0) whereParams.push(capacityMax);
         if (building.length) whereParams.push(...building);
@@ -453,8 +681,6 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
         items = items.filter((f) => set.has(f.type));
       }
 
-      items = rankFacilities(items, q);
-
       // Equipment filtering is already applied in SQL via EXISTS,
       // but keep this as a safety net for any unexpected data.
       if (equipment.length) items = items.filter((f) => equipment.every((e) => (f.equipment || []).includes(e)));
@@ -465,7 +691,7 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
       const startIdx = (safePage - 1) * pageSize;
       const slice = items.slice(startIdx, startIdx + pageSize);
 
-      respondWithCachedSearch(res, cacheKey, { items: slice, total, page: safePage, pageSize, pageCount });
+      res.json({ items: slice, total, page: safePage, pageSize, pageCount });
       return;
     } catch (e) {
       console.error("Error while querying facilities from SQLite, falling back to in-memory data:", e);
@@ -473,6 +699,12 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
   }
 
   let items = FACILITIES;
+  if (q) {
+    items = items.filter((f) => {
+      const hay = `${f.name} ${f.building} ${f.campus}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }
   if (capacityMin > 0) {
     items = items.filter((f) => f.capacity >= capacityMin);
   }
@@ -495,8 +727,6 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
     items = items.filter((f) => equipment.every((e) => (f.equipment || []).includes(e)));
   }
 
-  items = rankFacilities(items, q);
-
   if (hasValidAvailabilityWindow) {
     items = items.filter((f) => {
       const facilityId = String(f.id);
@@ -518,7 +748,7 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
   const end = start + pageSize;
   const slice = items.slice(start, end);
 
-  respondWithCachedSearch(res, cacheKey, { items: slice, total, page: safePage, pageSize, pageCount });
+  res.json({ items: slice, total, page: safePage, pageSize, pageCount });
 });
 
 app.get("/api/facilities/:id", (req, res) => {
@@ -832,18 +1062,15 @@ app.get("/api/bookings", authenticateToken, (req, res) => {
 
 app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) => {
   const { facilityId, date, start, end, reason } = req.body || {};
-  const userRole = resolveBookingRole({
-    userRole: req.user?.role,
-    headerRole: req.headers["x-user-role"],
-    bodyRole: req.body?.userRole,
-  });
+  // role may come from a header or the body; default to student for sanity
+  const userRole = String(req.user?.role || req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
 
   if (!facilityId || !date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
     return;
   }
 
-  const userEmail = normalizeEmail(req.user?.email);
+  const userEmail = String(req.user?.email || "").trim().toLowerCase();
 
   if (!userEmail) {
     res.status(401).json({ message: "Access token required" });
@@ -921,44 +1148,24 @@ app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) =>
 
       const email = userEmail;
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
-      const costCentreSnapshot = userRole === "staff" ? getCostCentre(email) : null;
 
       const tx = db.transaction(() => {
         const user = db
           .prepare(
-            `INSERT INTO users (first_name, last_name, email, role, password_hash)
-             VALUES ('Guest', 'User', ?, ?, ?)
-             ON CONFLICT(email) DO UPDATE SET
-               email = excluded.email,
-               role = COALESCE(users.role, excluded.role),
-               password_hash = COALESCE(NULLIF(users.password_hash, ''), excluded.password_hash)
+            `INSERT INTO users (first_name, last_name, email)
+             VALUES ('Guest', 'User', ?)
+             ON CONFLICT(email) DO UPDATE SET email = excluded.email
              RETURNING user_id`
           )
-          .get(email, userRole, createSystemPasswordHash(email));
-
-        let creditSnapshot = { allowed: true, deducted: 0, remaining: null };
-        if (userRole === "student") {
-          creditSnapshot = deductCredits(email, STUDENT_BOOKING_CREDIT_COST, { db });
-          if (!creditSnapshot.allowed) {
-            const err = new Error("Insufficient credits remaining for this booking.");
-            err.status = 409;
-            throw err;
-          }
-        }
+          .get(email);
 
         const booking = db
           .prepare(
-            `INSERT INTO bookings (user_id, booking_reason, booking_role, credits_charged, credits_refunded, cost_centre_snapshot)
-             VALUES (?, ?, ?, ?, 0, ?)
+            `INSERT INTO bookings (user_id, booking_reason)
+             VALUES (?, ?)
              RETURNING booking_id`
           )
-          .get(
-            Number(user.user_id),
-            reasonTrimmed,
-            userRole,
-            creditSnapshot.deducted,
-            costCentreSnapshot
-          );
+          .get(Number(user.user_id), reasonTrimmed);
 
         db
           .prepare(
@@ -967,32 +1174,18 @@ app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) =>
           )
           .run(Number(booking.booking_id), facilityDbId, startTs, endTs);
 
-        return {
-          bookingId: Number(booking.booking_id),
-          deducted: creditSnapshot.deducted,
-          creditsRemaining: creditSnapshot.remaining,
-          costCentreSnapshot,
-        };
+        return Number(booking.booking_id);
       });
 
-      const bookingResult = tx();
-      const bookingId = bookingResult.bookingId;
+      const bookingId = tx();
       insertAuditLog(db, 'CREATE', email, bookingId, { facilityId, date, start, end, reason: reasonTrimmed });
-      let extra = {};
-      if (userRole === "student") {
-        extra = {
-          deducted: bookingResult.deducted,
-          creditsRemaining: bookingResult.creditsRemaining,
-        };
-      } else if (userRole === "staff") {
-        extra.costCentre = bookingResult.costCentreSnapshot;
-      }
+      formatBookingConfirmation(userRole);
       console.log("BOOKING_CREATED", {
         bookingId: `B-${bookingId}`,
         userEmail: email,
         timestamp: new Date().toISOString(),
       });
-      invalidateSearchCache();
+      console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole });
 
       res.status(201).json({
         id: `B-${bookingId}`,
@@ -1002,11 +1195,10 @@ app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) =>
         end,
         userEmail: email,
         reason: reasonTrimmed || undefined,
-        ...extra,
       });
       return;
     } catch (e) {
-      res.status(e?.status || 500).json({ message: e?.message || "Booking failed" });
+      res.status(500).json({ message: e?.message || "Booking failed" });
       return;
     }
   }
@@ -1056,38 +1248,21 @@ app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) =>
     userEmail,
     status: "active",
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
-    userRole,
-    creditsCharged: 0,
-    creditsRefunded: 0,
-    costCentreSnapshot: null,
   };
 
   BOOKINGS.push(booking);
-  let extra = {};
-  if (userRole === "student") {
-    const charge = deductCredits(booking.userEmail, STUDENT_BOOKING_CREDIT_COST);
-    if (!charge.allowed) {
-      BOOKINGS.pop();
-      res.status(409).json({ message: "Insufficient credits remaining for this booking." });
-      return;
-    }
-    booking.creditsCharged = charge.deducted;
-    extra = { deducted: charge.deducted, creditsRemaining: charge.remaining };
-  } else if (userRole === "staff") {
-    booking.costCentreSnapshot = getCostCentre(booking.userEmail);
-    extra.costCentre = booking.costCentreSnapshot;
-  }
   console.log("BOOKING_CREATED", {
     bookingId: booking.id,
     userEmail: booking.userEmail,
     timestamp: new Date().toISOString(),
   });
-  invalidateSearchCache();
+  formatBookingConfirmation(userRole);
+  console.log("SEND_EMAIL", { bookingId: booking.id, userRole });
 
-  res.status(201).json({ ...booking, ...extra });
+  res.status(201).json(booking);
 });
 
-app.put("/api/bookings/:id", authenticateToken, (req, res) => {
+app.put("/api/bookings/:id", authenticateToken, validateBookingInput, (req, res) => {
   const bookingIdRaw = String(req.params.id || "").trim();
   const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
   const { date, start, end } = req.body || {};
@@ -1223,7 +1398,6 @@ app.put("/api/bookings/:id", authenticateToken, (req, res) => {
         startTs,
         endTs
       );
-      invalidateSearchCache();
       res.json({
         id: `B-${bookingIdNumeric}`,
         facilityId: bookingRow.facility_code,
@@ -1287,7 +1461,6 @@ app.put("/api/bookings/:id", authenticateToken, (req, res) => {
   booking.date = date;
   booking.start = start;
   booking.end = end;
-  invalidateSearchCache();
 
   res.json({
     id: booking.id,
@@ -1340,44 +1513,10 @@ app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
         return;
       }
 
-      const cancelResult = db.transaction(() => {
-        let refundedCredits = 0;
-        let creditsRemaining = null;
-
-        if (String(bookingRow.booking_role || "").toLowerCase() === "student") {
-          const startRow = db
-            .prepare(`SELECT MIN(start_time) AS start_time FROM booking_detail WHERE booking_id = ?`)
-            .get(numericId);
-          const refundAmount = getCancellationCreditRefund(
-            startRow?.start_time,
-            bookingRow.credits_charged,
-            bookingRow.credits_refunded
-          );
-
-          if (refundAmount > 0) {
-            const refundResult = refundCredits(userEmail, refundAmount, { db });
-            refundedCredits = refundResult.refunded;
-            creditsRemaining = refundResult.remaining;
-          } else {
-            creditsRemaining = getStudentBalance(userEmail, { db });
-          }
-        }
-
-        db.prepare(
-          `UPDATE bookings
-           SET status = 'CANCELLED',
-               credits_refunded = credits_refunded + ?
-           WHERE booking_id = ?`
-        ).run(refundedCredits, numericId);
-
-        return { refundedCredits, creditsRemaining };
-      })();
+      db.prepare(`UPDATE bookings SET status = 'CANCELLED' WHERE booking_id = ?`).run(numericId);
       insertAuditLog(db, 'CANCEL', userEmail, numericId, { bookingId });
-      invalidateSearchCache();
       res.json({
         message: "Booking cancelled successfully.",
-        refundedCredits: cancelResult.refundedCredits,
-        creditsRemaining: cancelResult.creditsRemaining,
         booking: {
           id: bookingId,
           userEmail,
@@ -1416,28 +1555,6 @@ app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
   // AC3 + AC4 — mark cancelled and free slot
   booking.status = "cancelled"
 
-  let refundedCredits = 0
-  let creditsRemaining = null
-  if (String(booking.userRole || "").toLowerCase() === "student") {
-    const bookingStartMinutes = toMinutes(booking.start)
-    const bookingStartIso = bookingStartMinutes === null
-      ? null
-      : toIsoUtcFromDateAndMinutes(booking.date, bookingStartMinutes)
-    const refundAmount = getCancellationCreditRefund(
-      bookingStartIso,
-      booking.creditsCharged,
-      booking.creditsRefunded
-    )
-    if (refundAmount > 0) {
-      const refundResult = refundCredits(userEmail, refundAmount)
-      refundedCredits = refundResult.refunded
-      creditsRemaining = refundResult.remaining
-      booking.creditsRefunded = (Number(booking.creditsRefunded) || 0) + refundedCredits
-    } else {
-      creditsRemaining = getStudentBalance(userEmail)
-    }
-  }
-
   // AC8 — audit logging
   console.log("BOOKING_CANCELLED", {
     bookingId,
@@ -1445,9 +1562,7 @@ app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
     timestamp: new Date().toISOString(),
   })
 
-  invalidateSearchCache();
-
-  res.json({ message: "Booking cancelled successfully.", refundedCredits, creditsRemaining, booking })
+  res.json({ message: "Booking cancelled successfully.", booking })
 })
 
 app.get("/api/admin/logs", authenticateToken, (req, res) => {
@@ -1495,108 +1610,6 @@ app.get("/api/admin/logs", authenticateToken, (req, res) => {
   }
 });
 
-app.get("/api/me/credits", authenticateToken, (req, res) => {
-  const email = normalizeEmail(req.user?.email);
-  const role = String(req.user?.role || "user").toLowerCase();
-  const db = getDb();
-
-  if (!email) {
-    return res.status(401).json({ message: "Authenticated user email is required." });
-  }
-
-  return res.json({
-    email,
-    role,
-    creditsRemaining: role === "student" ? getStudentBalance(email, { db }) : null,
-  });
-});
-
-app.post("/api/login", async (req, res) => {
-  const email = normalizeEmail(req.body?.email);
-  const password = String(req.body?.password || "");
-
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required." });
-  }
-
-  if (isLockedOut(email)) {
-    const remainingSec = Math.ceil(getRemainingLockoutMs(email) / 1000);
-    const remainingMin = Math.ceil(remainingSec / 60);
-    return res.status(429).json({
-      error: "LOGIN_LOCKED",
-      message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
-      retryAfterSeconds: remainingSec,
-    });
-  }
-
-  const db = getDb();
-  if (!db) {
-    return res.status(503).json({ message: "Authentication database unavailable." });
-  }
-
-  try {
-    const user = db
-      .prepare(
-        `SELECT user_id, first_name, last_name, email, role, password_hash
-         FROM users
-         WHERE lower(email) = ?
-         LIMIT 1`
-      )
-      .get(email);
-
-    if (!user?.password_hash) {
-      const failure = recordFailedLogin(email);
-      if (failure.lockedUntil && Date.now() < failure.lockedUntil) {
-        const remainingSec = Math.ceil(getRemainingLockoutMs(email) / 1000);
-        const remainingMin = Math.ceil(remainingSec / 60);
-        return res.status(429).json({
-          error: "LOGIN_LOCKED",
-          message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
-          retryAfterSeconds: remainingSec,
-        });
-      }
-
-      return res.status(401).json({
-        message: "Invalid email or password.",
-        attemptsRemaining: Math.max(0, MAX_LOGIN_FAILURES - failure.count),
-      });
-    }
-
-    const passwordMatches = await verifyPassword(password, user.password_hash);
-    if (!passwordMatches) {
-      const failure = recordFailedLogin(email);
-      if (failure.lockedUntil && Date.now() < failure.lockedUntil) {
-        const remainingSec = Math.ceil(getRemainingLockoutMs(email) / 1000);
-        const remainingMin = Math.ceil(remainingSec / 60);
-        return res.status(429).json({
-          error: "LOGIN_LOCKED",
-          message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
-          retryAfterSeconds: remainingSec,
-        });
-      }
-
-      return res.status(401).json({
-        message: "Invalid email or password.",
-        attemptsRemaining: Math.max(0, MAX_LOGIN_FAILURES - failure.count),
-      });
-    }
-
-    resetFailureCount(email);
-
-    const role = String(user.role || "student").toLowerCase();
-    const token = jwt.sign({ email: user.email, role }, JWT_SECRET, { expiresIn: "1h" });
-
-    return res.json({
-      email: user.email,
-      role,
-      token,
-      name: `${user.first_name} ${user.last_name}`.trim(),
-    });
-  } catch (error) {
-    return res.status(500).json({ message: error?.message || "Unable to sign in." });
-  }
-});
-
 if (process.env.NODE_ENV !== 'production') {
   app.delete("/__debug/delete-test", (req, res) => {
     res.json({ ok: true, method: "DELETE" })
@@ -1619,9 +1632,8 @@ app.get("/", (req, res) => {
 });
 
 if (require.main === module) {
-  const port = Number(process.env.PORT) || 3001;
-  app.listen(port, () => {
-    console.log(`Backend running on port ${port}`);
+  app.listen(3001, () => {
+    console.log("Backend running on port 3001");
   });
 }
 

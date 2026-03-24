@@ -1,7 +1,7 @@
 -- =========================================================
 -- Seed Data (Generated)
 -- =========================================================
--- Generated at: 2026-03-24T02:51:26.481Z
+-- Generated at: 2026-03-20T06:21:39.488Z
 -- Source of truth: backend/facilityCatalog + backend/equipment rules
 -- Notes:
 -- - Run schema.sql first (this file does not CREATE TABLEs).
@@ -1424,20 +1424,19 @@ JOIN facilities f ON f.facility_code = l.facility_code
 JOIN equipment e ON e.name = l.equipment_name;
 
 -- Demo users
-INSERT OR IGNORE INTO users (user_id, first_name, last_name, email, role, password_hash) VALUES
-  (1, 'Alicia', 'Tan', 'alicia.tan.2027@smu.edu.sg', 'student', '$2b$10$A5WnAlOIP0owK3ASSrA9wewzHFeay5jQPTJMDR0vjh4o3.fBW6Q.O'),
-  (2, 'Brandon', 'Lee', 'brandon.lee.2026@smu.edu.sg', 'student', '$2b$10$4Ec6OjV2.jDX6K0z9MOpxO.pJMqwr4DOroYLorBNt/F5MekBgPXbq'),
-  (3, 'Cheryl', 'Lim', 'cheryl.lim.2025@smu.edu.sg', 'student', '$2b$10$LeADuMYTzKgoHPCBFcCK1uQGrpkJUQx5d./ewpaHI8WHajfoJfz.u'),
-  (4, 'Marcus', 'Goh', 'marcus.goh@smu.edu.sg', 'staff', '$2b$10$UHRCP20zbefNiMnx4iBhyO1w1Ey2HH1U3.Pd3nKtueS/Qs2dVe1gi'),
-  (5, 'Priya', 'Nair', 'priya.nair@smu.edu.sg', 'staff', '$2b$10$UG7BiJAD5tgyToHDmaoii.WfYeRR/D2QS2tgq5JIBblUgiFaGyB/.'),
-  (6, 'Rachel', 'Wong', 'rachel.wong@smu.edu.sg', 'admin', '$2b$10$ycI8GVEfJU4uUmpBMzCEEel/xqBCG.CMR3QvboL96vwPZ/MB24tSC');
+INSERT OR IGNORE INTO users (user_id, first_name, last_name, email) VALUES
+  (1, 'Alvin', 'C', 'alvin@example.com'),
+  (2, 'Ben', 'Tan', 'ben@example.com'),
+  (3, 'Claire', 'Lim', 'claire@smu.edu.sg'),
+  (4, 'Devon', 'Lee', 'devon@smu.edu.sg'),
+  (5, 'Guest', 'User', 'guest@smu.edu.sg');
 
 -- Demo bookings (explicit booking_id for deterministic seed)
 INSERT OR IGNORE INTO bookings (booking_id, user_id, booking_reason) VALUES
   (1, 1, 'Group study session'),
   (2, 2, 'Weekly seminar prep'),
-  (3, 4, 'Guest lecture setup'),
-  (4, 5, 'Project meeting'),
+  (3, 3, 'Guest lecture setup'),
+  (4, 4, 'Project meeting'),
   (5, 1, 'Workshop');
 
 -- Demo booking slots

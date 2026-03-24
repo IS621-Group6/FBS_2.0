@@ -5,7 +5,6 @@ const path = require('path')
 
 const { buildSeedFacilities } = require('../facilityCatalog')
 const { EQUIPMENT_POOL, computeEquipmentForFacility } = require('../equipment')
-const { hashPasswordSync } = require('../authUtils')
 
 const repoRoot = path.resolve(__dirname, '..', '..')
 const outPath = path.join(repoRoot, 'database', 'sqlite', 'seed.sql')
@@ -158,13 +157,12 @@ function buildSeedSql() {
 
   // Demo users/bookings (kept small, deterministic).
   lines.push('-- Demo users')
-  lines.push("INSERT OR IGNORE INTO users (user_id, first_name, last_name, email, role, password_hash) VALUES")
-  lines.push(`  (1, 'Alicia', 'Tan', 'alicia.tan.2027@smu.edu.sg', 'student', ${sqlString(hashPasswordSync('password'))}),`)
-  lines.push(`  (2, 'Brandon', 'Lee', 'brandon.lee.2026@smu.edu.sg', 'student', ${sqlString(hashPasswordSync('password'))}),`)
-  lines.push(`  (3, 'Cheryl', 'Lim', 'cheryl.lim.2025@smu.edu.sg', 'student', ${sqlString(hashPasswordSync('password'))}),`)
-  lines.push(`  (4, 'Marcus', 'Goh', 'marcus.goh@smu.edu.sg', 'staff', ${sqlString(hashPasswordSync('password'))}),`)
-  lines.push(`  (5, 'Priya', 'Nair', 'priya.nair@smu.edu.sg', 'staff', ${sqlString(hashPasswordSync('password'))}),`)
-  lines.push(`  (6, 'Rachel', 'Wong', 'rachel.wong@smu.edu.sg', 'admin', ${sqlString(hashPasswordSync('password'))});`)
+  lines.push("INSERT OR IGNORE INTO users (user_id, first_name, last_name, email) VALUES")
+  lines.push("  (1, 'Alvin', 'C', 'alvin@example.com'),")
+  lines.push("  (2, 'Ben', 'Tan', 'ben@example.com'),")
+  lines.push("  (3, 'Claire', 'Lim', 'claire@smu.edu.sg'),")
+  lines.push("  (4, 'Devon', 'Lee', 'devon@smu.edu.sg'),")
+  lines.push("  (5, 'Guest', 'User', 'guest@smu.edu.sg');")
   lines.push('')
 
   // Choose 6 deterministic facilities for booking examples (by facility_name).
@@ -175,8 +173,8 @@ function buildSeedSql() {
   lines.push('INSERT OR IGNORE INTO bookings (booking_id, user_id, booking_reason) VALUES')
   lines.push("  (1, 1, 'Group study session'),")
   lines.push("  (2, 2, 'Weekly seminar prep'),")
-  lines.push("  (3, 4, 'Guest lecture setup'),")
-  lines.push("  (4, 5, 'Project meeting'),")
+  lines.push("  (3, 3, 'Guest lecture setup'),")
+  lines.push("  (4, 4, 'Project meeting'),")
   lines.push("  (5, 1, 'Workshop');")
   lines.push('')
 

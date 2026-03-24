@@ -63,7 +63,6 @@ export default function SearchPage() {
   const [filterMeta, setFilterMeta] = useState(null)
   const [filterMetaError, setFilterMetaError] = useState(false)
 
-  const q = sp.get('q') || ''
   const capacity = sp.get('capacity') || ''
   const minCapacity = sp.get('minCapacity') || ''
   const date = sp.get('date') || isoToday()
@@ -170,10 +169,8 @@ export default function SearchPage() {
   const equipmentKey = useMemo(() => equipment.join(','), [equipment])
   const page = Math.max(1, Number(sp.get('page') || '1'))
 
-  const [searchDraft, setSearchDraft] = useState(q)
   const [data, setData] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [searchError, setSearchError] = useState('')
 
   const [glimpsesById, setGlimpsesById] = useState({})
 
@@ -199,11 +196,9 @@ export default function SearchPage() {
     Promise.resolve().then(() => {
       if (ignore) return
       setIsLoading(true)
-      setSearchError('')
     })
 
     searchFacilities({
-      q,
       capacity,
       minCapacity,
       building: buildingsKey ? buildingsKey.split(',').filter(Boolean) : [],
@@ -222,7 +217,6 @@ export default function SearchPage() {
       .catch(() => {
         if (ignore) return
         setData(null)
-        setSearchError('Unable to load rooms right now. Please try again.')
       })
       .finally(() => {
         if (ignore) return
@@ -232,7 +226,7 @@ export default function SearchPage() {
     return () => {
       ignore = true
     }
-  }, [q, capacity, minCapacity, buildingsKey, typesKey, equipmentKey, date, startForAvailability, end, page])
+  }, [capacity, minCapacity, buildingsKey, typesKey, equipmentKey, date, startForAvailability, end, page])
 
   useEffect(() => {
     let ignore = false
@@ -293,10 +287,6 @@ export default function SearchPage() {
     setTimeout(() => window.scrollTo({ top: y }), 50)
   }, [location.search])
 
-  useEffect(() => {
-    setSearchDraft(q)
-  }, [q])
-
   const updateParam = (key, value) => {
     const next = new URLSearchParams(sp)
     if (!value) next.delete(key)
@@ -311,15 +301,6 @@ export default function SearchPage() {
       if (value === undefined || value === null || value === '') next.delete(key)
       else next.set(key, String(value))
     }
-    next.set('page', '1')
-    setSearchParamsNoScroll(next)
-  }
-
-  const commitSearch = (value) => {
-    const next = new URLSearchParams(sp)
-    const normalized = String(value || '').trim()
-    if (normalized) next.set('q', normalized)
-    else next.delete('q')
     next.set('page', '1')
     setSearchParamsNoScroll(next)
   }
@@ -410,25 +391,6 @@ export default function SearchPage() {
             </svg>
           </div>
           <div>Filter Rooms</div>
-        </div>
-
-        <div className="stack" style={{ gap: 12 }}>
-          <div className="field">
-            <div className="label">Search</div>
-            <input
-              type="search"
-              className="input"
-              value={searchDraft}
-              placeholder="Search by building, room number, name, or equipment"
-              onChange={(e) => setSearchDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key !== 'Enter') return
-                e.preventDefault()
-                commitSearch(searchDraft)
-              }}
-              aria-label="Search facilities"
-            />
-          </div>
         </div>
 
         <div className="filterGridTop" aria-label="Date and time filters">
@@ -548,12 +510,7 @@ export default function SearchPage() {
     </div>
   )
 
-  const resultsContent = searchError ? (
-    <div className="card cardPad">
-      <div className="h2">Search unavailable</div>
-      <div className="muted">{searchError}</div>
-    </div>
-  ) : !data && isLoading ? (
+  const resultsContent = !data && isLoading ? (
     <div className="card cardPad">Loading…</div>
   ) : data?.items?.length ? (
     <>
@@ -581,11 +538,7 @@ export default function SearchPage() {
   ) : (
     <div className="card cardPad">
       <div className="h2">No matching rooms</div>
-      <div className="muted">
-        {q
-          ? `No rooms matched "${q}". Try a broader phrase, remove some filters, or clear the search.`
-          : 'Try a different keyword, reduce equipment requirements, or adjust capacity.'}
-      </div>
+      <div className="muted">Try a different keyword, reduce equipment requirements, or adjust capacity.</div>
     </div>
   )
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import CalendarGrid from '../components/CalendarGrid'
@@ -22,7 +22,6 @@ export default function BookingPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const userEmail = user?.email || ''
-  const userRole = user?.role || (userEmail === 'guest@smu.edu.sg' || userEmail.endsWith('@smu.edu.sg') ? 'student' : 'staff')
 
   const [currentStep, setCurrentStep] = useState(STEPS.FACILITY)
   const [searchQuery, setSearchQuery] = useState('')
@@ -39,7 +38,6 @@ export default function BookingPage() {
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
-  const latestSearchRequestRef = useRef(0)
 
   // Calculate end time
   const selectedEnd = useMemo(() => {
@@ -51,34 +49,31 @@ export default function BookingPage() {
     return `${hh}:${mm}`
   }, [selectedStart, selectedDuration])
 
-  const runFacilitySearch = async (query) => {
-    const requestId = latestSearchRequestRef.current + 1
-    latestSearchRequestRef.current = requestId
+  // Load facilities on mount
+  useEffect(() => {
+    let ignore = false
 
     setIsSearching(true)
     setError('')
+    searchFacilities({ q: '' })
+      .then((results) => {
+        if (ignore) return
+        setFacilities(results?.items || [])
+      })
+      .catch((e) => {
+        if (ignore) return
+        setError(e?.message || 'Search failed')
+        setFacilities([])
+      })
+      .finally(() => {
+        if (ignore) return
+        setIsSearching(false)
+      })
 
-    try {
-      const results = await searchFacilities({ q: String(query || '').trim() })
-      if (requestId !== latestSearchRequestRef.current) return
-      setFacilities(results?.items || [])
-    } catch (e) {
-      if (requestId !== latestSearchRequestRef.current) return
-      setError(e?.message || 'Search failed')
-      setFacilities([])
-    } finally {
-      if (requestId !== latestSearchRequestRef.current) return
-      setIsSearching(false)
+    return () => {
+      ignore = true
     }
-  }
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      void runFacilitySearch(searchQuery)
-    }, 260)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [searchQuery])
+  }, [])
 
   // Load facility details when selected
   useEffect(() => {
@@ -128,6 +123,20 @@ export default function BookingPage() {
     }
   }, [selectedFacility?.id, selectedDate, currentStep])
 
+  const handleSearch = async () => {
+    setIsSearching(true)
+    setError('')
+    try {
+      const results = await searchFacilities({ q: searchQuery })
+      setFacilities(results?.items || [])
+    } catch (e) {
+      setError(e?.message || 'Search failed')
+      setFacilities([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
   const handleSelectFacility = (facility) => {
     setSelectedFacility(facility)
     setSelectedDate(isoToday())
@@ -167,9 +176,8 @@ export default function BookingPage() {
         start: selectedStart,
         end: selectedEnd,
         reason: selectedReason.trim(),
-        userRole,
       })
-      navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`, { state: { financial: booking } })
+      navigate(`/booking/success?id=${encodeURIComponent(booking.id)}`)
     } catch (e) {
       if (e.status === 409) {
         setError('This time slot is no longer available. Please select a different time.')
@@ -242,58 +250,24 @@ export default function BookingPage() {
           {/* Step 1: Select Facility */}
           {currentStep === STEPS.FACILITY && (
             <div className="stack" style={{ gap: 16 }}>
-              <form
-                className="stack"
-                style={{ gap: 10 }}
-                onSubmit={(e) => {
-                  e.preventDefault()
-                  void runFacilitySearch(searchQuery)
-                }}
-              >
-                <div className="row" style={{ gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <input
-                    type="search"
-                    className="input"
-                    placeholder="Search by building, room number, name, or equipment..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key !== 'Enter') return
-                      e.preventDefault()
-                      void runFacilitySearch(searchQuery)
-                    }}
-                    style={{ flex: '1 1 320px' }}
-                  />
+              <div>
+                <input
+                  type="text"
+                  className="input"
+                  placeholder="Search facilities by name, building, or equipment..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+              </div>
 
-                  <button type="submit" className="btn btnPrimary" disabled={isSearching}>
-                    {isSearching ? 'Searching...' : 'Search'}
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn"
-                    onClick={() => {
-                      setSearchQuery('')
-                      void runFacilitySearch('')
-                    }}
-                    disabled={!searchQuery}
-                  >
-                    Clear
-                  </button>
-                </div>
-
-                <div className="muted2" style={{ fontSize: 13 }}>
-                  Results refresh while you type. Press Enter to run the current search immediately.
-                </div>
-              </form>
+              <button className="btn btnPrimary" onClick={handleSearch} disabled={isSearching}>
+                {isSearching ? 'Searching...' : 'Search'}
+              </button>
 
               {facilities.length === 0 && !isSearching && (
                 <div className="card cardPad">
-                  <div className="muted">
-                    {searchQuery.trim()
-                      ? `No facilities matched "${searchQuery.trim()}". Try a broader phrase.`
-                      : 'No facilities found. Try a different search.'}
-                  </div>
+                  <div className="muted">No facilities found. Try a different search.</div>
                 </div>
               )}
 
