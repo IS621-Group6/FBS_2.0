@@ -80,3 +80,23 @@ Go to your browser and open:
 ```
 http://localhost:5173
 ```
+
+---
+
+## Deployment
+
+### Frontend — Vercel
+
+1. Import the repository in [Vercel](https://vercel.com/).
+2. **Important:** In the Vercel project settings, set the **Root Directory** to `frontend/`.
+   Vercel only reads `vercel.json` from its configured root, so the rewrites in `frontend/vercel.json` only take effect when this is set correctly.
+3. Set the **Build Command** to `npm run build` and **Output Directory** to `dist` (Vercel auto-detects these for Vite, but confirm they are correct).
+4. After deploying the backend (see below), update the rewrite destination in `frontend/vercel.json` to point to your Render service URL.
+
+### Backend — Render
+
+1. Create a new **Web Service** in [Render](https://render.com/) pointing to this repository.
+2. Set the **Root Directory** to `backend/`.
+3. Set the **Build Command** to `npm install` and the **Start Command** to `npm start`.
+4. Add any required environment variables (e.g. `PORT`, `JWT_SECRET`).
+5. Copy the Render service URL and update `frontend/vercel.json` with it, then redeploy the Vercel frontend.
