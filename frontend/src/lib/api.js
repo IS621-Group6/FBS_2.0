@@ -1,22 +1,12 @@
 import { getStoredUser } from './auth'
 
-const API_BASE = import.meta.env.MODE === 'test'
-  ? ''
-  : import.meta.env.DEV
-    ? 'http://localhost:3001'
-    : ''
-
-function buildApiUrl(path) {
-  return `${API_BASE}${path}`
-}
-
 function getAuthHeaders() {
   const token = getStoredUser()?.token
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 async function request(path, { method = 'GET', body, headers } = {}) {
-  const res = await fetch(buildApiUrl(path), {
+  const res = await fetch(path, {
     method,
     headers: {
       ...(body ? { 'Content-Type': 'application/json' } : {}),
@@ -26,13 +16,9 @@ async function request(path, { method = 'GET', body, headers } = {}) {
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  const contentType = res.headers?.get?.('content-type') || ''
-  const isJson = contentType.includes('application/json') || typeof res.json === 'function'
-  const payload = isJson
-    ? await res.json().catch(() => null)
-    : typeof res.text === 'function'
-      ? await res.text().catch(() => null)
-      : null
+  const contentType = res.headers.get('content-type') || ''
+  const isJson = contentType.includes('application/json')
+  const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null)
 
   if (!res.ok) {
     const message = payload?.message || payload?.error || `Request failed (${res.status})`
@@ -84,30 +70,9 @@ export function createBooking(payload) {
   return request('/api/bookings', { method: 'POST', body: payload })
 }
 
-export function loginUser(payload) {
-  return request('/api/login', { method: 'POST', body: payload }).catch((err) => {
-    if (err && typeof err === 'object' && ('status' in err || 'data' in err)) {
-      const message = err.message && !String(err.message).startsWith('Request failed')
-        ? err.message
-        : 'Invalid email or password.'
-      throw Object.assign(new Error(message), {
-        status: err.status,
-        data: err.data,
-      })
-    }
-
-    throw err
-  })
-}
-
 export function getBookings() {
   return request('/api/bookings')
 }
-
-export function getMyCredits() {
-  return request('/api/me/credits')
-}
-
 export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }) {
   const sp = new URLSearchParams()
   if (ids?.length) sp.set('ids', ids.join(','))

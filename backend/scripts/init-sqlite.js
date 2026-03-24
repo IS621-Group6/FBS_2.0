@@ -6,7 +6,6 @@ const Database = require('better-sqlite3')
 
 const { buildSeedFacilities } = require('../facilityCatalog')
 const { EQUIPMENT_POOL, computeEquipmentForFacility } = require('../equipment')
-const { hashPasswordSync } = require('../authUtils')
 
 const repoRoot = path.resolve(__dirname, '..', '..')
 
@@ -173,16 +172,14 @@ function seedUsersAndBookings(db) {
   }
 
   // Users
-  const insertUser = db.prepare(
-    'INSERT INTO users (first_name, last_name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)'
-  )
+  const insertUser = db.prepare('INSERT INTO users (first_name, last_name, email) VALUES (?, ?, ?)')
   const users = [
-    ['Alicia', 'Tan', 'alicia.tan.2027@smu.edu.sg', 'student', hashPasswordSync('password')],
-    ['Brandon', 'Lee', 'brandon.lee.2026@smu.edu.sg', 'student', hashPasswordSync('password')],
-    ['Cheryl', 'Lim', 'cheryl.lim.2025@smu.edu.sg', 'student', hashPasswordSync('password')],
-    ['Marcus', 'Goh', 'marcus.goh@smu.edu.sg', 'staff', hashPasswordSync('password')],
-    ['Priya', 'Nair', 'priya.nair@smu.edu.sg', 'staff', hashPasswordSync('password')],
-    ['Rachel', 'Wong', 'rachel.wong@smu.edu.sg', 'admin', hashPasswordSync('password')],
+    ['Test', 'User', 'test@test.com'],
+    ['Alvin', 'C', 'alvin@example.com'],
+    ['Ben', 'Tan', 'ben@example.com'],
+    ['Claire', 'Lim', 'claire@smu.edu.sg'],
+    ['Devon', 'Lee', 'devon@smu.edu.sg'],
+    ['Guest', 'User', 'guest@smu.edu.sg'],
   ]
 
   const txUsers = db.transaction(() => {
@@ -227,11 +224,11 @@ function seedUsersAndBookings(db) {
       .map((r) => [String(r.email), Number(r.id)])
   )
 
-  const aliciaUserId = userIdByEmail.get('alicia.tan.2027@smu.edu.sg')
-  const brandonUserId = userIdByEmail.get('brandon.lee.2026@smu.edu.sg')
-  const marcusUserId = userIdByEmail.get('marcus.goh@smu.edu.sg')
-  const priyaUserId = userIdByEmail.get('priya.nair@smu.edu.sg')
-  const fallbackUserId = aliciaUserId || brandonUserId || 1
+  const testUserId = userIdByEmail.get('test@test.com')
+  const guestUserId = userIdByEmail.get('guest@smu.edu.sg')
+  const claireUserId = userIdByEmail.get('claire@smu.edu.sg')
+  const devonUserId = userIdByEmail.get('devon@smu.edu.sg')
+  const fallbackUserId = testUserId || guestUserId || 1
 
   const insertBooking = db.prepare('INSERT INTO bookings (user_id, booking_reason, status) VALUES (?, ?, ?)')
   const insertDetail = db.prepare(
@@ -321,7 +318,7 @@ function seedUsersAndBookings(db) {
 
     // A couple of non-demo-user bookings so the dataset feels real.
     {
-      userId: marcusUserId || fallbackUserId,
+      userId: claireUserId || fallbackUserId,
       reason: 'Guest lecture setup',
       status: 'CONFIRMED',
       dateYmd: addDaysYmd(todayLocal, 1),
@@ -330,7 +327,7 @@ function seedUsersAndBookings(db) {
       end: '10:30',
     },
     {
-      userId: priyaUserId || fallbackUserId,
+      userId: devonUserId || fallbackUserId,
       reason: 'Team workshop',
       status: 'CONFIRMED',
       dateYmd: addDaysYmd(todayLocal, 2),
