@@ -14,7 +14,6 @@ const {
 } = require("./authLimiter");
 const { hashPasswordSync, normalizeEmail, resolveBookingRole, verifyPassword } = require("./authUtils");
 const { insertAuditLog, selectAuditLogs } = require("./auditLogs");
-const { formatBookingConfirmation } = require("./emailTemplates");
 const { FACILITIES, SINGLE_CAMPUS_LABEL, facilityTypeForCapacity } = require("./facilityData");
 const {
   STUDENT_BOOKING_CREDIT_COST,
@@ -988,13 +987,11 @@ app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) =>
       } else if (userRole === "staff") {
         extra.costCentre = bookingResult.costCentreSnapshot;
       }
-      const emailBody = formatBookingConfirmation(userRole, extra);
       console.log("BOOKING_CREATED", {
         bookingId: `B-${bookingId}`,
         userEmail: email,
         timestamp: new Date().toISOString(),
       });
-      console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole, body: emailBody });
       invalidateSearchCache();
 
       res.status(201).json({
@@ -1085,8 +1082,6 @@ app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) =>
     userEmail: booking.userEmail,
     timestamp: new Date().toISOString(),
   });
-  const emailBody = formatBookingConfirmation(userRole, extra);
-  console.log("SEND_EMAIL", { bookingId: booking.id, userRole, body: emailBody });
   invalidateSearchCache();
 
   res.status(201).json({ ...booking, ...extra });
