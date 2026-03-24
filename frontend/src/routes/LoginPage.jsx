@@ -78,7 +78,7 @@ export default function LoginPage({ onLoginSuccess }) {
     }
 
     setLockoutUntil(null)
-    onLoginSuccess({ email: data.email })
+    onLoginSuccess({ email: data.email, token: data.token })
   } catch (err) {
     setError('Unable to reach server. Please try again.')
   } finally {
