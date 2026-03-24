@@ -62,6 +62,7 @@ function validateBookingInput(req, res, next) {
     return invalid(res);
   }
 
+  // optional type checks
   if (userEmail !== undefined && typeof userEmail !== "string") {
     return invalid(res);
   }
@@ -74,8 +75,10 @@ function validateBookingInput(req, res, next) {
   const cleanDate = sanitizeText(date);
   const cleanStart = sanitizeText(start);
   const cleanEnd = sanitizeText(end);
-  const cleanUserEmail = userEmail !== undefined ? sanitizeText(userEmail) : undefined;
-  const cleanReason = reason !== undefined ? sanitizeText(reason) : undefined;
+  const cleanUserEmail =
+    userEmail !== undefined ? sanitizeText(userEmail) : undefined;
+  const cleanReason =
+    reason !== undefined ? sanitizeText(reason) : undefined;
 
   if (!isValidFacilityId(cleanFacilityId)) {
     return invalid(res);
