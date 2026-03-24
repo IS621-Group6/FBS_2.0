@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './LoginPage.css'
 
 export default function LoginPage({ onLoginSuccess }) {
@@ -7,37 +7,84 @@ export default function LoginPage({ onLoginSuccess }) {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+  const [lockoutUntil, setLockoutUntil] = useState(null)
+  const [now, setNow] = useState(Date.now())
+ 
+  const remainingSeconds = lockoutUntil
+  ? Math.max(0, Math.ceil((lockoutUntil - now) / 1000))
+  : 0
+
+  const isLocked = remainingSeconds > 0
+
+  const lockoutMessage = useMemo(() => {
+    if (!isLocked) return ''
+    const remainingMinutes = Math.ceil(remainingSeconds / 60)
+    return `Account locked after too many failed attempts. Please try again in ${remainingMinutes} minute${remainingMinutes === 1 ? '' : 's'}.`
+  }, [isLocked, remainingSeconds])
+
+  useEffect(() => {
+    if (!isLocked) return
+    const timer = setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [isLocked])
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
+  e.preventDefault()
 
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    try {
-      if (email === 'test@test.com' && password === 'password') {
-        const response = await fetch('/__debug/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, role: 'user' }),
-        })
-
-        const payload = await response.json().catch(() => null)
-        if (!response.ok || !payload?.token) {
-          throw new Error(payload?.message || 'Unable to sign in.')
-        }
-
-        onLoginSuccess({ email, token: payload.token })
-      } else {
-        setError('Invalid email or password.')
-      }
-    } catch (err) {
-      setError(err?.message || 'Unable to sign in.')
-    } finally {
-      setIsLoading(false)
-    }
+  if (isLocked) {
+    setError(lockoutMessage)
+    return
   }
+
+  setError('')
+  setIsLoading(true)
+
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      if (response.status === 429 && data.error === 'LOGIN_LOCKED') {
+        const retryAfterSeconds = Number(data.retryAfterSeconds) || 15 * 60
+        setLockoutUntil(Date.now() + retryAfterSeconds * 1000)
+        setNow(Date.now())
+        setError(
+          data.message ||
+            'Account locked after too many failed attempts. Please try again in 15 minutes.'
+        )
+        return
+      }
+
+      setError(data.message || 'Invalid email or password.')
+      return
+    }
+
+    if (data.token) {
+      localStorage.setItem('fbs_token', data.token)
+    }
+
+    setLockoutUntil(null)
+    onLoginSuccess({ email: data.email })
+  } catch (err) {
+    setError('Unable to reach server. Please try again.')
+  } finally {
+    setIsLoading(false)
+  }
+}
 
   const handleForgotPassword = (e) => {
     e.preventDefault()
@@ -63,7 +110,7 @@ export default function LoginPage({ onLoginSuccess }) {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@smu.edu.sg"
               required
-              disabled={isLoading}
+              disabled={isLoading || isLocked}
               aria-invalid={error ? 'true' : 'false'}
             />
           </div>
@@ -79,7 +126,7 @@ export default function LoginPage({ onLoginSuccess }) {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={isLoading}
+                disabled={isLoading || isLocked}
                 aria-invalid={error ? 'true' : 'false'}
               />
               <button
@@ -104,9 +151,13 @@ export default function LoginPage({ onLoginSuccess }) {
             </div>
           </div>
 
-          {error && <div className="error-message" role="alert">{error}</div>}
+          {(error || isLocked) && (
+            <div className={`error-message ${isLocked ? 'locked-message' : ''}`} role="alert">
+              {isLocked ? lockoutMessage : error}
+            </div>
+          )}
 
-          <button type="submit" disabled={isLoading} className="form-button">
+          <button type="submit" disabled={isLoading || isLocked} className="form-button">
             {isLoading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
@@ -117,8 +168,8 @@ export default function LoginPage({ onLoginSuccess }) {
 
         <div className="test-credentials">
           <p className="test-credentials-label">Test Credentials:</p>
-          <p className="test-credentials-text">Email: test@test.com</p>
-          <p className="test-credentials-text">Password: password</p>
+          <p className="test-credentials-text">Email: demo@smu.edu.sg</p>
+          <p className="test-credentials-text">Password: demo123</p>
         </div>
       </div>
     </div>
