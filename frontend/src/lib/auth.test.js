@@ -6,24 +6,25 @@ describe('auth storage helpers', () => {
   })
 
   test('storeUser and getStoredUser roundtrip', () => {
-    const stored = storeUser('test@test.com', 'token-123')
-    expect(stored).toEqual({ email: 'test@test.com', token: 'token-123' })
-    expect(getStoredUser()).toEqual({ email: 'test@test.com', token: 'token-123' })
+    const stored = storeUser({ email: 'marcus.goh@smu.edu.sg', token: 'token-123', role: 'staff' })
+    expect(stored).toEqual({ email: 'marcus.goh@smu.edu.sg', token: 'token-123', role: 'staff' })
+    expect(getStoredUser()).toEqual({ email: 'marcus.goh@smu.edu.sg', token: 'token-123', role: 'staff' })
   })
 
   test('clearStoredUser removes auth keys', () => {
-    storeUser('test@test.com', 'token-123')
+    storeUser({ email: 'marcus.goh@smu.edu.sg', token: 'token-123', role: 'staff' })
     clearStoredUser()
 
     expect(localStorage.getItem(AUTH_STORAGE.loggedInKey)).toBeNull()
     expect(localStorage.getItem(AUTH_STORAGE.emailKey)).toBeNull()
     expect(localStorage.getItem(AUTH_STORAGE.tokenKey)).toBeNull()
+    expect(localStorage.getItem(AUTH_STORAGE.roleKey)).toBeNull()
     expect(getStoredUser()).toBeNull()
   })
 
   test('blank email or token does not log in', () => {
-    expect(storeUser('   ', 'token-123')).toBeNull()
-    expect(storeUser('test@test.com', '   ')).toBeNull()
+    expect(storeUser({ email: '   ', token: 'token-123', role: 'student' })).toBeNull()
+    expect(storeUser({ email: 'test@test.com', token: '   ', role: 'student' })).toBeNull()
     expect(getStoredUser()).toBeNull()
   })
 })

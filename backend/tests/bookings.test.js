@@ -154,8 +154,33 @@ describe("Facilities and bookings API integration", () => {
       start: payload.start,
       end: payload.end,
       userEmail: email,
+      deducted: 100,
     });
     expect(resp.body.id).toMatch(/^B-\d+$/);
+    expect(resp.body.creditsRemaining).toBeLessThan(4500);
+  });
+
+  test("staff booking returns cost-centre billing snapshot", async () => {
+    const facilityId = await getAnyFacilityId();
+    const email = "staff.finance@example.com";
+    const token = await getAuthToken(email, "staff");
+    const payload = {
+      facilityId,
+      date: uniqueFutureDate(),
+      start: "10:00",
+      end: "11:00",
+      reason: "Staff finance booking",
+    };
+
+    const resp = await request(app)
+      .post("/api/bookings")
+      .set("Authorization", `Bearer ${token}`)
+      .send(payload);
+
+    expect(resp.status).toBe(201);
+    expect(resp.body.costCentre).toMatch(/^RCA-\d{4}$/);
+    expect(resp.body).not.toHaveProperty("deducted");
+    expect(resp.body).not.toHaveProperty("creditsRemaining");
   });
 
   test("same-day booking is allowed (Singapore time)", async () => {

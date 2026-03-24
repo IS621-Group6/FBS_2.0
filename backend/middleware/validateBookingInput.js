@@ -1,7 +1,15 @@
 const MAX_BOOKING_MINUTES = 180;
+const MAX_REASON_LENGTH = 200;
+const MAX_FACILITY_ID_LENGTH = 50;
+const MAX_EMAIL_LENGTH = 254;
 
-function invalid(res) {
-  return res.status(400).json({ message: "Invalid input" });
+function invalid(res, message = "Invalid input") {
+  return res.status(400).json({ message });
+}
+
+function sanitizeText(value) {
+  if (typeof value !== "string") return value;
+  return value.trim();
 }
 
 function isValidDate(dateStr) {
@@ -14,46 +22,37 @@ function isValidTime(timeStr) {
   return /^([01]\d|2[0-3]):([0-5]\d)$/.test(timeStr);
 }
 
+function isValidFacilityId(value) {
+  if (typeof value !== "string") return false;
+  if (value.length < 1 || value.length > MAX_FACILITY_ID_LENGTH) return false;
+  return /^[A-Za-z0-9_-]+$/.test(value);
+}
+
+function isValidEmail(value) {
+  if (typeof value !== "string") return false;
+  if (value.length < 3 || value.length > MAX_EMAIL_LENGTH) return false;
+  return /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(value);
+}
+
+function isValidReason(value) {
+  if (typeof value !== "string") return false;
+  if (value.length < 1 || value.length > MAX_REASON_LENGTH) return false;
+  return /^[A-Za-z0-9 .,:()&/_-]+$/.test(value);
+}
+
 function toMinutes(timeStr) {
   if (!isValidTime(timeStr)) return null;
   const [h, m] = timeStr.split(":").map(Number);
   return h * 60 + m;
 }
 
-function containsMaliciousInput(value) {
-  if (typeof value !== "string") return false;
-
-  const suspiciousPatterns = [
-    /<script/i,
-    /<\/script>/i,
-    /javascript:/i,
-    /onerror\s*=/i,
-    /onload\s*=/i,
-    /drop\s+table/i,
-    /union\s+select/i,
-    /insert\s+into/i,
-    /delete\s+from/i,
-    /--/,
-    /;/,
-  ];
-
-  return suspiciousPatterns.some((pattern) => pattern.test(value));
-}
-
-function sanitizeText(value) {
-  if (typeof value !== "string") return value;
-  return value.trim();
-}
-
 function validateBookingInput(req, res, next) {
   const { facilityId, date, start, end, userEmail, reason } = req.body || {};
 
-  // required fields
   if (!facilityId || !date || !start || !end) {
-    return invalid(res);
+    return invalid(res, "Missing required booking fields");
   }
 
-  // type checks
   if (
     typeof facilityId !== "string" ||
     typeof date !== "string" ||
@@ -71,7 +70,6 @@ function validateBookingInput(req, res, next) {
     return invalid(res);
   }
 
-  // sanitize optional/free-text fields
   const cleanFacilityId = sanitizeText(facilityId);
   const cleanDate = sanitizeText(date);
   const cleanStart = sanitizeText(start);
@@ -79,41 +77,37 @@ function validateBookingInput(req, res, next) {
   const cleanUserEmail = userEmail !== undefined ? sanitizeText(userEmail) : undefined;
   const cleanReason = reason !== undefined ? sanitizeText(reason) : undefined;
 
-  // format checks
-  if (!isValidDate(cleanDate) || !isValidTime(cleanStart) || !isValidTime(cleanEnd)) {
+  if (!isValidFacilityId(cleanFacilityId)) {
     return invalid(res);
   }
 
-  // malicious input checks
-  const valuesToCheck = [
-    cleanFacilityId,
-    cleanDate,
-    cleanStart,
-    cleanEnd,
-    cleanUserEmail,
-    cleanReason,
-  ].filter((v) => typeof v === "string");
-
-  for (const value of valuesToCheck) {
-    if (containsMaliciousInput(value)) {
-      return invalid(res);
-    }
+  if (!isValidDate(cleanDate)) {
+    return invalid(res, "Invalid date format. Use YYYY-MM-DD.");
   }
 
-  // logical consistency
+  if (!isValidTime(cleanStart) || !isValidTime(cleanEnd)) {
+    return invalid(res, "Invalid time range");
+  }
+
+  if (cleanUserEmail !== undefined && !isValidEmail(cleanUserEmail)) {
+    return invalid(res);
+  }
+
+  if (cleanReason !== undefined && !isValidReason(cleanReason)) {
+    return invalid(res);
+  }
+
   const startMin = toMinutes(cleanStart);
   const endMin = toMinutes(cleanEnd);
 
   if (startMin === null || endMin === null || startMin >= endMin) {
-    return invalid(res);
+    return invalid(res, "Invalid time range");
   }
 
-  // booking duration constraint
   if (endMin - startMin > MAX_BOOKING_MINUTES) {
-    return invalid(res);
+    return invalid(res, "Bookings are limited to 3 hours.");
   }
 
-  // overwrite body with sanitized values
   req.body = {
     ...req.body,
     facilityId: cleanFacilityId,
