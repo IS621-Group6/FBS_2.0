@@ -1,5 +1,11 @@
+const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '')
+
+function buildUrl(path) {
+  return API_BASE_URL ? `${API_BASE_URL}${path}` : path
+}
+
 async function request(path, { method = 'GET', body, headers } = {}) {
-  const res = await fetch(path, {
+  const res = await fetch(buildUrl(path), {
     method,
    headers: {
   ...(body ? { 'Content-Type': 'application/json' } : {}),
