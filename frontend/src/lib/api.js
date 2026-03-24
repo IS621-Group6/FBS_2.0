@@ -47,6 +47,21 @@ async function request(path, { method = 'GET', body, headers } = {}) {
   return payload
 }
 
+async function requestWithFallback(paths, options) {
+  let lastError = null
+
+  for (const path of paths) {
+    try {
+      return await request(path, options)
+    } catch (err) {
+      lastError = err
+      if (err?.status !== 404) break
+    }
+  }
+
+  throw lastError
+}
+
 export function getHealth() {
   return request('/api/health')
 }
@@ -87,7 +102,7 @@ export function createBooking(payload) {
 }
 
 export function loginUser(payload) {
-  return request('/api/login', { method: 'POST', body: payload }).catch((err) => {
+  return requestWithFallback(['/api/auth/login', '/api/login'], { method: 'POST', body: payload }).catch((err) => {
     if (err && typeof err === 'object' && ('status' in err || 'data' in err)) {
       const message = err.message && !String(err.message).startsWith('Request failed')
         ? err.message

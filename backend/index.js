@@ -87,7 +87,7 @@ if (isProduction && !envJwtSecret) {
 }
 
 const JWT_SECRET = envJwtSecret || "demo-secret-key";
-app.post("/api/auth/login", (req, res) => {
+function handleLogin(req, res) {
   const { email, password } = req.body || {};
   if (!email || !password) {
     return res.status(400).json({ message: "Email and password are required" });
@@ -131,7 +131,9 @@ app.post("/api/auth/login", (req, res) => {
   resetFailureCount(normalizedEmail);
   const token = jwt.sign({ email: normalizedEmail, role: "user" }, JWT_SECRET, { expiresIn: "1h" });
   return res.json({ token, email: normalizedEmail, expiresIn: 3600 });
-});
+}
+
+app.post(["/api/auth/login", "/api/login"], handleLogin);
 
 function validatePassword(email, password) {
   return email === "demo@smu.edu.sg" && password === "demo123";

@@ -7,6 +7,15 @@ describe('LoginPage', () => {
   })
 
   test('shows error for invalid credentials', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ message: 'Invalid email or password.' }),
+      text: async () => '',
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
     render(<LoginPage onLoginSuccess={vi.fn()} />)
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'bad@test.com' } })
@@ -21,7 +30,10 @@ describe('LoginPage', () => {
   test('calls onLoginSuccess for valid credentials', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ token: 'token-123' }),
+      status: 200,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ token: 'token-123', name: 'Test User', role: 'student' }),
+      text: async () => '',
     })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -33,7 +45,12 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }))
 
     await waitFor(() => {
-      expect(onLoginSuccess).toHaveBeenCalledWith({ email: 'test@test.com', token: 'token-123' })
+      expect(onLoginSuccess).toHaveBeenCalledWith({
+        email: 'test@test.com',
+        token: 'token-123',
+        name: 'Test User',
+        role: 'student',
+      })
     })
   })
 })

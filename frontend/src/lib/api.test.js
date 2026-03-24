@@ -1,4 +1,4 @@
-import { createBooking, getBookings } from './api'
+import { createBooking, getBookings, loginUser } from './api'
 import { clearStoredUser, storeUser } from './auth'
 
 describe('api request helpers', () => {
@@ -60,6 +60,35 @@ describe('api request helpers', () => {
       message: 'Missing required booking fields',
       status: 400,
     })
+
+    vi.unstubAllGlobals()
+  })
+
+  test('loginUser falls back to legacy login route on 404', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        headers: { get: () => 'text/html' },
+        json: async () => null,
+        text: async () => 'Cannot POST /api/auth/login',
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ email: 'demo@smu.edu.sg', token: 'token-123' }),
+        text: async () => '',
+      })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(loginUser({ email: 'demo@smu.edu.sg', password: 'demo123' })).resolves.toEqual({
+      email: 'demo@smu.edu.sg',
+      token: 'token-123',
+    })
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/auth/login', expect.any(Object))
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/login', expect.any(Object))
 
     vi.unstubAllGlobals()
   })

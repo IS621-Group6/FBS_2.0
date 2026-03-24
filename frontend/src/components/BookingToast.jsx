@@ -15,11 +15,6 @@ export default function BookingToast({ userRole, creditsInfo, costCentre, onClos
       ) : (
         <p>Cost centre billed: <strong>{costCentre}</strong></p>
       )}
-      <p className="policy">
-        {isStudent
-          ? 'Note: Cancellations made < 24 hours before start time will yield a 50% credit refund.'
-          : 'Staff cancellation penalties are tier-based; please review your policy.'}
-      </p>
       <button onClick={onClose}>✕</button>
     </div>
   );
