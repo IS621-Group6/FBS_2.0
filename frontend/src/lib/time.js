@@ -35,3 +35,36 @@ export function isoToday() {
   const now = new Date()
   return `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`
 }
+
+export function singaporeNowInfo() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Singapore',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date())
+
+  const year = parts.find((p) => p.type === 'year')?.value
+  const month = parts.find((p) => p.type === 'month')?.value
+  const day = parts.find((p) => p.type === 'day')?.value
+  const hour = Number(parts.find((p) => p.type === 'hour')?.value)
+  const minute = Number(parts.find((p) => p.type === 'minute')?.value)
+
+  return {
+    date: year && month && day ? `${year}-${month}-${day}` : isoToday(),
+    minutes: Number.isFinite(hour) && Number.isFinite(minute) ? hour * 60 + minute : 0,
+  }
+}
+
+export function isPastSingaporeDateTime(date, hhmm) {
+  const startMinutes = parseTimeToMinutes(hhmm)
+  if (!date || startMinutes === null) return false
+
+  const now = singaporeNowInfo()
+  if (date < now.date) return true
+  if (date > now.date) return false
+  return startMinutes < now.minutes
+}

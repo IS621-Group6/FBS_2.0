@@ -30,6 +30,7 @@ const START_TIME_OPTIONS = (() => {
 const END_TIME_OPTIONS = [...START_TIME_OPTIONS, '24:00']
 
 const RESULTS_PAGE_SIZE = 48
+const CLIENT_MERGE_PAGE_SIZE = 500
 const DOCK_TOP_OFFSET_PX = 88
 const DOCK_HYSTERESIS_PX = 28
 const UNDOCK_AT_TOP_ONLY_PX = 0
@@ -49,6 +50,37 @@ function clampBookingDuration(minutes) {
   return Math.max(30, Math.min(24 * 60, m))
 }
 
+function mergeFacilityPayloads(primary, secondary, page, pageSize) {
+  const merged = []
+  const seen = new Set()
+
+  for (const item of primary?.items || []) {
+    if (seen.has(item.id)) continue
+    seen.add(item.id)
+    merged.push(item)
+  }
+
+  for (const item of secondary?.items || []) {
+    if (seen.has(item.id)) continue
+    seen.add(item.id)
+    merged.push(item)
+  }
+
+  const total = merged.length
+  const pageCount = Math.max(1, Math.ceil(total / pageSize))
+  const safePage = Math.min(page, pageCount)
+  const start = (safePage - 1) * pageSize
+  const end = start + pageSize
+
+  return {
+    items: merged.slice(start, end),
+    total,
+    page: safePage,
+    pageSize,
+    pageCount,
+  }
+}
+
 export default function SearchPage() {
   const [sp] = useSearchParams()
   const navigate = useNavigate()
@@ -63,6 +95,7 @@ export default function SearchPage() {
   const [filterMeta, setFilterMeta] = useState(null)
   const [filterMetaError, setFilterMetaError] = useState(false)
 
+  const q = sp.get('q') || ''
   const capacity = sp.get('capacity') || ''
   const minCapacity = sp.get('minCapacity') || ''
   const date = sp.get('date') || isoToday()
@@ -169,8 +202,10 @@ export default function SearchPage() {
   const equipmentKey = useMemo(() => equipment.join(','), [equipment])
   const page = Math.max(1, Number(sp.get('page') || '1'))
 
+  const [searchDraft, setSearchDraft] = useState(q)
   const [data, setData] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [searchError, setSearchError] = useState('')
 
   const [glimpsesById, setGlimpsesById] = useState({})
 
@@ -196,20 +231,50 @@ export default function SearchPage() {
     Promise.resolve().then(() => {
       if (ignore) return
       setIsLoading(true)
+      setSearchError('')
     })
 
-    searchFacilities({
+    const selectedBuildings = buildingsKey ? buildingsKey.split(',').filter(Boolean) : []
+    const selectedTypes = typesKey ? typesKey.split(',').filter(Boolean) : []
+    const selectedEquipment = equipmentKey ? equipmentKey.split(',').filter(Boolean) : []
+    const sharedParams = {
       capacity,
       minCapacity,
-      building: buildingsKey ? buildingsKey.split(',').filter(Boolean) : [],
-      type: typesKey ? typesKey.split(',').filter(Boolean) : [],
-      equipment: equipmentKey ? equipmentKey.split(',').filter(Boolean) : [],
       date,
       start: startForAvailability,
       end: end || '',
-      page,
-      pageSize: RESULTS_PAGE_SIZE,
-    })
+    }
+
+    const requestPromise = q && selectedBuildings.length > 0
+      ? Promise.all([
+          searchFacilities({
+            ...sharedParams,
+            q,
+            type: selectedTypes,
+            equipment: selectedEquipment,
+            page: 1,
+            pageSize: CLIENT_MERGE_PAGE_SIZE,
+          }),
+          searchFacilities({
+            ...sharedParams,
+            building: selectedBuildings,
+            type: selectedTypes,
+            equipment: selectedEquipment,
+            page: 1,
+            pageSize: CLIENT_MERGE_PAGE_SIZE,
+          }),
+        ]).then(([queryPayload, chipPayload]) => mergeFacilityPayloads(queryPayload, chipPayload, page, RESULTS_PAGE_SIZE))
+      : searchFacilities({
+          q,
+          ...sharedParams,
+          building: selectedBuildings,
+          type: selectedTypes,
+          equipment: selectedEquipment,
+          page,
+          pageSize: RESULTS_PAGE_SIZE,
+        })
+
+    requestPromise
       .then((payload) => {
         if (ignore) return
         setData(payload)
@@ -217,6 +282,7 @@ export default function SearchPage() {
       .catch(() => {
         if (ignore) return
         setData(null)
+        setSearchError('Unable to load rooms right now. Please try again.')
       })
       .finally(() => {
         if (ignore) return
@@ -226,7 +292,7 @@ export default function SearchPage() {
     return () => {
       ignore = true
     }
-  }, [capacity, minCapacity, buildingsKey, typesKey, equipmentKey, date, startForAvailability, end, page])
+  }, [q, capacity, minCapacity, buildingsKey, typesKey, equipmentKey, date, startForAvailability, end, page])
 
   useEffect(() => {
     let ignore = false
@@ -287,6 +353,10 @@ export default function SearchPage() {
     setTimeout(() => window.scrollTo({ top: y }), 50)
   }, [location.search])
 
+  useEffect(() => {
+    setSearchDraft(q)
+  }, [q])
+
   const updateParam = (key, value) => {
     const next = new URLSearchParams(sp)
     if (!value) next.delete(key)
@@ -301,6 +371,15 @@ export default function SearchPage() {
       if (value === undefined || value === null || value === '') next.delete(key)
       else next.set(key, String(value))
     }
+    next.set('page', '1')
+    setSearchParamsNoScroll(next)
+  }
+
+  const commitSearch = (value) => {
+    const next = new URLSearchParams(sp)
+    const normalized = String(value || '').trim()
+    if (normalized) next.set('q', normalized)
+    else next.delete('q')
     next.set('page', '1')
     setSearchParamsNoScroll(next)
   }
@@ -391,6 +470,29 @@ export default function SearchPage() {
             </svg>
           </div>
           <div>Filter Rooms</div>
+        </div>
+
+        <div className="stack" style={{ gap: 12 }}>
+          <div className="field">
+            <div className="label">Search</div>
+            <input
+              type="search"
+              className="input"
+              value={searchDraft}
+              placeholder="Search by building, room number, name, or equipment"
+              onChange={(e) => {
+                const nextValue = e.target.value
+                setSearchDraft(nextValue)
+                if (nextValue === '') commitSearch('')
+              }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter') return
+                e.preventDefault()
+                commitSearch(searchDraft)
+              }}
+              aria-label="Search facilities"
+            />
+          </div>
         </div>
 
         <div className="filterGridTop" aria-label="Date and time filters">
@@ -510,7 +612,12 @@ export default function SearchPage() {
     </div>
   )
 
-  const resultsContent = !data && isLoading ? (
+  const resultsContent = searchError ? (
+    <div className="card cardPad">
+      <div className="h2">Search unavailable</div>
+      <div className="muted">{searchError}</div>
+    </div>
+  ) : !data && isLoading ? (
     <div className="card cardPad">Loading…</div>
   ) : data?.items?.length ? (
     <>
@@ -538,7 +645,11 @@ export default function SearchPage() {
   ) : (
     <div className="card cardPad">
       <div className="h2">No matching rooms</div>
-      <div className="muted">Try a different keyword, reduce equipment requirements, or adjust capacity.</div>
+      <div className="muted">
+        {q
+          ? `No rooms matched "${q}". Try a broader phrase, remove some filters, or clear the search.`
+          : 'Try a different keyword, reduce equipment requirements, or adjust capacity.'}
+      </div>
     </div>
   )
 

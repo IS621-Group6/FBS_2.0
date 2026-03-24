@@ -16,6 +16,7 @@ export default function CalendarGrid({
   selectedDuration,
   onSelectStart,
   businessHours = { start: '08:00', end: '22:00' },
+  isSlotDisabled,
 }) {
   const [hoverStartMin, setHoverStartMin] = useState(null)
 
@@ -74,7 +75,8 @@ export default function CalendarGrid({
           const label = formatTimeLabel(slotMin)
           const endMin = slotMin + selectedDuration
 
-          const isBlocked = blocks.some((b) => overlaps(slotMin, endMin, b.start, b.end))
+          const overlapsReservation = blocks.some((b) => overlaps(slotMin, endMin, b.start, b.end))
+          const isBlocked = overlapsReservation || Boolean(isSlotDisabled?.({ slotMin, endMin, label }))
           const isSelected =
             activeStartMin !== null &&
             activeEndMin !== null &&
@@ -104,7 +106,7 @@ export default function CalendarGrid({
               onBlur={() => setHoverStartMin(null)}
               aria-disabled={isBlocked}
               aria-label={isBlocked ? `${label} unavailable` : `${label} available`}
-              title={isBlocked ? 'This start time overlaps an existing booking.' : 'Select this start time'}
+              title={isBlocked ? 'This start time is not available.' : 'Select this start time'}
             >
               {label}
             </button>
