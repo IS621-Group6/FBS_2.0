@@ -11,6 +11,7 @@
 
 # generated local SQLite database files
 **/*.sqlite
+database/.jwt-dev-secret
 
 # env files
 .env

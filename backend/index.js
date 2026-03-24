@@ -1,4 +1,6 @@
 const crypto = require("crypto");
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -102,15 +104,37 @@ const allowedOrigins = new Set(
       : DEFAULT_DEV_ALLOWED_ORIGINS
 );
 
+function loadDevelopmentJwtSecret() {
+  const secretFilePath = process.env.JWT_SECRET_FILE
+    ? path.resolve(process.env.JWT_SECRET_FILE)
+    : path.resolve(__dirname, "..", "database", ".jwt-dev-secret");
+
+  try {
+    if (fs.existsSync(secretFilePath)) {
+      const existing = fs.readFileSync(secretFilePath, "utf8").trim();
+      if (existing) {
+        return existing;
+      }
+    }
+
+    const generated = crypto.randomBytes(32).toString("hex");
+    fs.mkdirSync(path.dirname(secretFilePath), { recursive: true });
+    fs.writeFileSync(secretFilePath, `${generated}\n`, { mode: 0o600 });
+    return generated;
+  } catch (_error) {
+    return crypto.randomBytes(32).toString("hex");
+  }
+}
+
 if (!envJwtSecret && !isProduction && !isTest) {
-  console.warn("[SECURITY] JWT_SECRET not set; using an ephemeral development secret.");
+  console.warn("[SECURITY] JWT_SECRET not set; using a generated development secret persisted on this machine.");
 }
 
 if (!isProduction && !isTest && configuredAllowedOrigins.length === 0) {
   console.warn("[SECURITY] ALLOWED_ORIGINS not set; defaulting CORS to local development origins.");
 }
 
-const JWT_SECRET = envJwtSecret || crypto.randomBytes(32).toString("hex");
+const JWT_SECRET = envJwtSecret || (isProduction ? "" : loadDevelopmentJwtSecret());
 
 const corsOptions = {
   origin(origin, callback) {
