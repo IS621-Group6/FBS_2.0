@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import AppShell from '../components/AppShell'
 import { cancelBooking, getBookings, modifyBooking } from '../lib/api'
+import { isoToday } from '../lib/time'
 import useAuth from '../lib/useAuth'
 
 function formatStatus(status) {
@@ -70,7 +71,7 @@ export default function ViewBookingsPage() {
   })
   const [selectedDate, setSelectedDate] = useState('')
 
-  const todayIso = isoFromDate(new Date())
+  const todayIso = isoToday()
 
   const sortedItems = useMemo(() => {
     const now = new Date()
@@ -245,7 +246,7 @@ export default function ViewBookingsPage() {
     setIsLoading(true)
     setError('')
     try {
-      const payload = await getBookings(userEmail)
+      const payload = await getBookings()
       setItems(payload?.items || [])
     } catch (e) {
       setError(e?.message || 'Failed to load bookings')
@@ -276,7 +277,7 @@ export default function ViewBookingsPage() {
     const bookingId = String(booking.id || '').replace(/^B-/, '')
     setIsCancellingById((prev) => ({ ...prev, [bookingId]: true }))
     try {
-      await cancelBooking(bookingId, userEmail)
+      await cancelBooking(bookingId)
       await loadBookings()
       setCancelSuccess(booking.id)
       setConfirmCancel(null)
@@ -318,6 +319,11 @@ export default function ViewBookingsPage() {
       return
     }
 
+    if (date < todayIso) {
+      setModifyError("You can't book a past date/time")
+      return
+    }
+
     // Simple local validation to ensure end time is after start time.
     const [startHour, startMinute] = String(start).split(':').map(Number)
     const [endHour, endMinute] = String(end).split(':').map(Number)
@@ -337,7 +343,7 @@ export default function ViewBookingsPage() {
     setModifyError('')
 
     try {
-      await modifyBooking(plainId, { date, start, end }, userEmail)
+      await modifyBooking(plainId, { date, start, end })
       await loadBookings()
       handleCloseModify()
     } catch (e) {
@@ -605,6 +611,7 @@ export default function ViewBookingsPage() {
                         className="input"
                         value={modifyForm.date}
                         onChange={(e) => handleModifyFormChange('date', e.target.value)}
+                        min={todayIso}
                         required
                         disabled={isModifying}
                       />

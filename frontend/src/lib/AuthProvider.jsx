@@ -5,8 +5,8 @@ import { clearStoredUser, getStoredUser, storeUser } from './auth'
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(() => getStoredUser())
 
-  const login = useCallback((email) => {
-    const next = storeUser(email)
+  const login = useCallback((authUser) => {
+    const next = storeUser(authUser)
     setUser(next)
     return next
   }, [])

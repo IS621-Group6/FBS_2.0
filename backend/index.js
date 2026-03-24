@@ -1,9 +1,39 @@
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { getDb, sqliteHealth } = require("./sqlite");
 const rateLimit = require("express-rate-limit");
 
-const { formatBookingConfirmation } = require("./emailTemplates");
+const {
+  recordFailedLogin,
+  resetFailureCount,
+  isLockedOut,
+  getRemainingLockoutMs,
+  MAX_LOGIN_FAILURES,
+} = require("./authLimiter");
+const { hashPasswordSync, normalizeEmail, resolveBookingRole, verifyPassword } = require("./authUtils");
+const { insertAuditLog, selectAuditLogs } = require("./auditLogs");
+const { FACILITIES, SINGLE_CAMPUS_LABEL, facilityTypeForCapacity } = require("./facilityData");
+const {
+  STUDENT_BOOKING_CREDIT_COST,
+  deductCredits,
+  getCancellationCreditRefund,
+  getCostCentre,
+  getStudentBalance,
+  refundCredits,
+} = require("./finance");
+const validateBookingInput = require("./middleware/validateBookingInput");
+const { createRequestAuthHelpers } = require("./requestAuth");
+const { buildSearchCacheKey, rankFacilities } = require("./searchUtils");
+const {
+  isIsoYmd,
+  overlaps,
+  singaporeTodayIso,
+  toHHMM,
+  toIsoUtcFromDateAndMinutes,
+  toMinutes,
+} = require("./timeUtils");
 
 const compression = require("compression");
 const NodeCache = require("node-cache");
@@ -12,37 +42,33 @@ const app = express();
 const globalLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
   max: Number(process.env.RATE_LIMIT_GLOBAL) || 100,
-
   standardHeaders: true,
   legacyHeaders: false,
-
   handler: (req, res) => {
     console.warn(
       `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
     );
 
     res.status(429).json({
-      error: "Too many requests. Please try again later."
+      error: "Too many requests. Please try again later.",
     });
-  }
+  },
 });
 
 const searchLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
   max: Number(process.env.RATE_LIMIT_SEARCH) || 20,
-
   standardHeaders: true,
   legacyHeaders: false,
-
   handler: (req, res) => {
     console.warn(
       `[RATE LIMIT] ${new Date().toISOString()} | IP: ${req.ip} | Endpoint: ${req.originalUrl}`
     );
 
     res.status(429).json({
-      error: "Too many search requests. Please slow down."
+      error: "Too many search requests. Please slow down.",
     });
-  }
+  },
 });
 
 const searchCache = new NodeCache({ stdTTL: 60 });
@@ -63,80 +89,47 @@ app.use((req, res, next) => {
 app.use(cors());
 app.use(express.json());
 
-// Apply global rate limiter to all routes except GET /api/facilities,
-// which has its own dedicated search limiter.
+const envJwtSecret = process.env.JWT_SECRET;
+const isProduction = process.env.NODE_ENV === "production";
+
 function globalLimiterUnlessSearch(req, res, next) {
   if (req.method === "GET" && req.path === "/api/facilities") {
     return next();
   }
+
   return globalLimiter(req, res, next);
 }
 
 app.use(globalLimiterUnlessSearch);
-function pad2(n) {
-  return String(n).padStart(2, "0");
+
+if (isProduction && !envJwtSecret) {
+  throw new Error("JWT_SECRET environment variable must be set in production.");
 }
 
-function toMinutes(hhmm) {
-  if (!hhmm) return null;
-  const [h, m] = String(hhmm).split(":").map(Number);
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
-  return h * 60 + m;
-}
+const JWT_SECRET = envJwtSecret || "demo-secret-key";
 
-function toHHMM(minutesFromMidnight) {
-  const h = Math.floor(minutesFromMidnight / 60);
-  const m = minutesFromMidnight % 60;
-  return `${pad2(h)}:${pad2(m)}`;
-}
-
-function toIsoUtcFromDateAndMinutes(dateYmd, minutesFromMidnight) {
-  const raw = String(dateYmd || '').trim();
-  const m = raw.match(/^\d{4}-\d{2}-\d{2}$/);
-  if (!m) return null;
-  const [yy, mm, dd] = raw.split('-').map((x) => Number(x));
-  if (!Number.isFinite(yy) || !Number.isFinite(mm) || !Number.isFinite(dd)) return null;
-  const mins = Number(minutesFromMidnight);
-  if (!Number.isFinite(mins)) return null;
-  const base = Date.UTC(yy, mm - 1, dd, 0, 0, 0);
-  const dt = new Date(base + mins * 60 * 1000);
-  const Y = dt.getUTCFullYear();
-  const M = pad2(dt.getUTCMonth() + 1);
-  const D = pad2(dt.getUTCDate());
-  const H = pad2(dt.getUTCHours());
-  const Min = pad2(dt.getUTCMinutes());
-  return `${Y}-${M}-${D}T${H}:${Min}:00Z`;
-}
-
-function overlaps(aStart, aEnd, bStart, bEnd) {
-  return aStart < bEnd && aEnd > bStart;
-}
+const { authenticateToken, resolveRequestUserEmail } = createRequestAuthHelpers({
+  jwtSecret: JWT_SECRET,
+  normalizeEmail,
+});
 
 const MAX_BOOKING_MINUTES = 180;
 
-const SINGLE_CAMPUS_LABEL = "SMU";
-const { buildSeedFacilities } = require("./facilityCatalog");
-const { computeEquipmentForFacility } = require("./equipment");
-
-function facilityTypeForCapacity(capacity) {
-  const c = Number(capacity) || 0;
-  if (c <= 1) return "Phone Booth";
-  if (c <= 2) return "Study Booth";
-  if (c <= 4) return "Meeting Pod";
-  if (c <= 8) return "Group Study Room";
-  if (c <= 16) return "Seminar Room";
-  return "Classroom";
+function respondWithCachedSearch(res, cacheKey, payload, status = "MISS") {
+  res.set("X-Search-Cache", status);
+  if (status === "MISS") {
+    searchCache.set(cacheKey, payload);
+  }
+  res.json(payload);
 }
 
-function makeFacilities() {
-  const base = buildSeedFacilities({ campusLabel: SINGLE_CAMPUS_LABEL });
-  return base.map((f) => ({
-    ...f,
-    equipment: computeEquipmentForFacility({ facilityName: f.name, facilityType: f.type }),
-  }));
+function invalidateSearchCache() {
+  searchCache.flushAll();
 }
 
-const FACILITIES = makeFacilities();
+function createSystemPasswordHash(email) {
+  return hashPasswordSync(`system:${email}:${crypto.randomUUID()}`);
+}
 
 /**
  * In-memory bookings for demo purposes.
@@ -166,9 +159,45 @@ function nextBookingId() {
   return `B-${base}`;
 }
 
-app.get("/api/health", (req, res) => {
-  const db = sqliteHealth();
-  res.json({ ok: true, service: "smu-fbs", time: new Date().toISOString(), db });
+app.get("/api/health", async (req, res) => {
+  const startTime = Date.now();
+
+  try {
+    const db = sqliteHealth();
+
+    // 🔹 Determine DB status
+    const dbStatus = db?.ok ? "CONNECTED" : "DISCONNECTED";
+
+    // 🔹 Determine overall system status
+    const status = dbStatus === "CONNECTED" ? "OK" : "DEGRADED";
+
+    const responseTime = Date.now() - startTime;
+
+    // 🔹 Logging
+    console.log(
+      `[HEALTH] ${new Date().toISOString()} | status=${status} | db=${dbStatus} | ${responseTime}ms`
+    );
+
+    res.status(200).json({
+      ok: status === "OK",
+      status,
+      service: "smu-fbs",
+      database: dbStatus,
+      responseTimeMs: responseTime,
+      timestamp: new Date().toISOString(),
+    });
+
+  } catch (error) {
+    console.error(
+      `[HEALTH ERROR] ${new Date().toISOString()} | ${error.message}`
+    );
+
+    res.status(500).json({
+      status: "ERROR",
+      message: "Health check failed",
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 // Filter metadata for building/type/equipment chips.
@@ -249,13 +278,6 @@ app.get('/api/debug', (req, res) => {
 });
 
 app.get("/api/facilities", searchLimiter, async (req, res) => {
-  const cacheKey = JSON.stringify(req.query);
-
-  const cachedResult = searchCache.get(cacheKey);
-
-  if (cachedResult) {
-    return res.json(cachedResult);
-  }
   const q = String(req.query.q || "").trim().toLowerCase();
   const building = String(req.query.building || "")
     .split(",")
@@ -323,16 +345,18 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
   const hasValidAvailabilityWindow = shouldFilterByAvailability && slotStartIso && slotEndIso;
   const page = Math.max(1, Number(req.query.page || 1));
   const pageSize = Math.min(50, Math.max(1, Number(req.query.pageSize || 12)));
+  const cacheKey = buildSearchCacheKey(req.query);
+  const cachedResponse = searchCache.get(cacheKey);
+
+  if (cachedResponse) {
+    respondWithCachedSearch(res, cacheKey, cachedResponse, "HIT");
+    return;
+  }
 
   const db = getDb();
   if (db) {
     try {
       const clauses = ["is_active = 1"];
-      if (q) {
-        clauses.push(
-          `(facility_code LIKE ? OR facility_name LIKE ? OR building LIKE ?)`
-        );
-      }
       if (capacityMin > 0) {
         clauses.push(`capacity >= ?`);
       }
@@ -375,11 +399,6 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
       let whereSql = "";
       if (clauses.length) {
         whereSql = `WHERE ${clauses.join(" AND ")}`;
-        // For the q clause we need three copies of the same parameter.
-        if (q) {
-          const qLike = `%${q}%`;
-          whereParams.push(qLike, qLike, qLike);
-        }
         if (capacityMin > 0) whereParams.push(capacityMin);
         if (capacityMax > 0) whereParams.push(capacityMax);
         if (building.length) whereParams.push(...building);
@@ -434,6 +453,8 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
         items = items.filter((f) => set.has(f.type));
       }
 
+      items = rankFacilities(items, q);
+
       // Equipment filtering is already applied in SQL via EXISTS,
       // but keep this as a safety net for any unexpected data.
       if (equipment.length) items = items.filter((f) => equipment.every((e) => (f.equipment || []).includes(e)));
@@ -444,9 +465,7 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
       const startIdx = (safePage - 1) * pageSize;
       const slice = items.slice(startIdx, startIdx + pageSize);
 
-      searchCache.set(cacheKey, { items: slice, total, page: safePage, pageSize, pageCount });
-
-      res.json({ items: slice, total, page: safePage, pageSize, pageCount });
+      respondWithCachedSearch(res, cacheKey, { items: slice, total, page: safePage, pageSize, pageCount });
       return;
     } catch (e) {
       console.error("Error while querying facilities from SQLite, falling back to in-memory data:", e);
@@ -454,12 +473,6 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
   }
 
   let items = FACILITIES;
-  if (q) {
-    items = items.filter((f) => {
-      const hay = `${f.name} ${f.building} ${f.campus}`.toLowerCase();
-      return hay.includes(q);
-    });
-  }
   if (capacityMin > 0) {
     items = items.filter((f) => f.capacity >= capacityMin);
   }
@@ -482,6 +495,8 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
     items = items.filter((f) => equipment.every((e) => (f.equipment || []).includes(e)));
   }
 
+  items = rankFacilities(items, q);
+
   if (hasValidAvailabilityWindow) {
     items = items.filter((f) => {
       const facilityId = String(f.id);
@@ -503,7 +518,7 @@ app.get("/api/facilities", searchLimiter, async (req, res) => {
   const end = start + pageSize;
   const slice = items.slice(start, end);
 
-  res.json({ items: slice, total, page: safePage, pageSize, pageCount });
+  respondWithCachedSearch(res, cacheKey, { items: slice, total, page: safePage, pageSize, pageCount });
 });
 
 app.get("/api/facilities/:id", (req, res) => {
@@ -753,9 +768,8 @@ app.get("/api/availability-glimpse", (req, res) => {
   res.json({ date, duration, items });
 });
 
-app.get("/api/bookings", (req, res) => {
-  const userEmail = String(req.query.userEmail || req.headers["x-user-email"] || "").trim();
-
+app.get("/api/bookings", authenticateToken, (req, res) => {
+  const userEmail = String(req.user?.email || "").trim().toLowerCase();
   const db = getDb();
   if (db) {
     try {
@@ -816,13 +830,34 @@ app.get("/api/bookings", (req, res) => {
   res.json({ items });
 });
 
-app.post("/api/bookings", (req, res) => {
-  const { facilityId, date, start, end, userEmail, reason } = req.body || {};
-  // role may come from a header or the body; default to student for sanity
-  const userRole = String(req.headers["x-user-role"] || req.body?.userRole || "student").toLowerCase();
+app.post("/api/bookings", authenticateToken, validateBookingInput, (req, res) => {
+  const { facilityId, date, start, end, reason } = req.body || {};
+  const userRole = resolveBookingRole({
+    userRole: req.user?.role,
+    headerRole: req.headers["x-user-role"],
+    bodyRole: req.body?.userRole,
+  });
 
   if (!facilityId || !date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
+    return;
+  }
+
+  const userEmail = normalizeEmail(req.user?.email);
+
+  if (!userEmail) {
+    res.status(401).json({ message: "Access token required" });
+    return;
+  }
+
+  if (!isIsoYmd(date)) {
+    res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    return;
+  }
+
+  const todaySg = singaporeTodayIso();
+  if (todaySg && String(date) < todaySg) {
+    res.status(400).json({ message: "Booking date cannot be before today (Singapore time)." });
     return;
   }
 
@@ -884,26 +919,46 @@ app.post("/api/bookings", (req, res) => {
         return;
       }
 
-      const email = String(userEmail || "guest@smu.edu.sg").trim().toLowerCase();
+      const email = userEmail;
       const reasonTrimmed = typeof reason === "string" && reason.trim() ? reason.trim() : null;
+      const costCentreSnapshot = userRole === "staff" ? getCostCentre(email) : null;
 
       const tx = db.transaction(() => {
         const user = db
           .prepare(
-            `INSERT INTO users (first_name, last_name, email)
-             VALUES ('Guest', 'User', ?)
-             ON CONFLICT(email) DO UPDATE SET email = excluded.email
+            `INSERT INTO users (first_name, last_name, email, role, password_hash)
+             VALUES ('Guest', 'User', ?, ?, ?)
+             ON CONFLICT(email) DO UPDATE SET
+               email = excluded.email,
+               role = COALESCE(users.role, excluded.role),
+               password_hash = COALESCE(NULLIF(users.password_hash, ''), excluded.password_hash)
              RETURNING user_id`
           )
-          .get(email);
+          .get(email, userRole, createSystemPasswordHash(email));
+
+        let creditSnapshot = { allowed: true, deducted: 0, remaining: null };
+        if (userRole === "student") {
+          creditSnapshot = deductCredits(email, STUDENT_BOOKING_CREDIT_COST, { db });
+          if (!creditSnapshot.allowed) {
+            const err = new Error("Insufficient credits remaining for this booking.");
+            err.status = 409;
+            throw err;
+          }
+        }
 
         const booking = db
           .prepare(
-            `INSERT INTO bookings (user_id, booking_reason)
-             VALUES (?, ?)
+            `INSERT INTO bookings (user_id, booking_reason, booking_role, credits_charged, credits_refunded, cost_centre_snapshot)
+             VALUES (?, ?, ?, ?, 0, ?)
              RETURNING booking_id`
           )
-          .get(Number(user.user_id), reasonTrimmed);
+          .get(
+            Number(user.user_id),
+            reasonTrimmed,
+            userRole,
+            creditSnapshot.deducted,
+            costCentreSnapshot
+          );
 
         db
           .prepare(
@@ -912,12 +967,32 @@ app.post("/api/bookings", (req, res) => {
           )
           .run(Number(booking.booking_id), facilityDbId, startTs, endTs);
 
-        return Number(booking.booking_id);
+        return {
+          bookingId: Number(booking.booking_id),
+          deducted: creditSnapshot.deducted,
+          creditsRemaining: creditSnapshot.remaining,
+          costCentreSnapshot,
+        };
       });
 
-      const bookingId = tx();
-      const emailBody = formatBookingConfirmation(userRole);
-      console.log("SEND_EMAIL", { bookingId: `B-${bookingId}`, userRole });
+      const bookingResult = tx();
+      const bookingId = bookingResult.bookingId;
+      insertAuditLog(db, 'CREATE', email, bookingId, { facilityId, date, start, end, reason: reasonTrimmed });
+      let extra = {};
+      if (userRole === "student") {
+        extra = {
+          deducted: bookingResult.deducted,
+          creditsRemaining: bookingResult.creditsRemaining,
+        };
+      } else if (userRole === "staff") {
+        extra.costCentre = bookingResult.costCentreSnapshot;
+      }
+      console.log("BOOKING_CREATED", {
+        bookingId: `B-${bookingId}`,
+        userEmail: email,
+        timestamp: new Date().toISOString(),
+      });
+      invalidateSearchCache();
 
       res.status(201).json({
         id: `B-${bookingId}`,
@@ -927,10 +1002,11 @@ app.post("/api/bookings", (req, res) => {
         end,
         userEmail: email,
         reason: reasonTrimmed || undefined,
+        ...extra,
       });
       return;
     } catch (e) {
-      res.status(500).json({ message: e?.message || "Booking failed" });
+      res.status(e?.status || 500).json({ message: e?.message || "Booking failed" });
       return;
     }
   }
@@ -971,31 +1047,51 @@ app.post("/api/bookings", (req, res) => {
     return;
   }
 
-  const email = String(userEmail || "unknown@smu.edu.sg").trim().toLowerCase();
-
   const booking = {
     id: nextBookingId(),
     facilityId,
     date,
     start,
     end,
-    userEmail: email,
+    userEmail,
     status: "active",
     reason: typeof reason === "string" && reason.trim() ? reason.trim() : undefined,
+    userRole,
+    creditsCharged: 0,
+    creditsRefunded: 0,
+    costCentreSnapshot: null,
   };
 
   BOOKINGS.push(booking);
-  const emailBody = formatBookingConfirmation(userRole);
-  console.log("SEND_EMAIL", { bookingId: booking.id, userRole });
+  let extra = {};
+  if (userRole === "student") {
+    const charge = deductCredits(booking.userEmail, STUDENT_BOOKING_CREDIT_COST);
+    if (!charge.allowed) {
+      BOOKINGS.pop();
+      res.status(409).json({ message: "Insufficient credits remaining for this booking." });
+      return;
+    }
+    booking.creditsCharged = charge.deducted;
+    extra = { deducted: charge.deducted, creditsRemaining: charge.remaining };
+  } else if (userRole === "staff") {
+    booking.costCentreSnapshot = getCostCentre(booking.userEmail);
+    extra.costCentre = booking.costCentreSnapshot;
+  }
+  console.log("BOOKING_CREATED", {
+    bookingId: booking.id,
+    userEmail: booking.userEmail,
+    timestamp: new Date().toISOString(),
+  });
+  invalidateSearchCache();
 
-  res.status(201).json(booking);
+  res.status(201).json({ ...booking, ...extra });
 });
 
-app.put("/api/bookings/:id", (req, res) => {
+app.put("/api/bookings/:id", authenticateToken, (req, res) => {
   const bookingIdRaw = String(req.params.id || "").trim();
   const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
-  const userEmail = String(req.headers["x-user-email"] || "").trim();
   const { date, start, end } = req.body || {};
+  const userEmail = String(req.user?.email || "").trim().toLowerCase();
 
   if (!userEmail) {
     res.status(401).json({ message: "Please log in to modify bookings." });
@@ -1004,6 +1100,17 @@ app.put("/api/bookings/:id", (req, res) => {
 
   if (!date || !start || !end) {
     res.status(400).json({ message: "Missing required booking fields" });
+    return;
+  }
+
+  if (!isIsoYmd(date)) {
+    res.status(400).json({ message: "Invalid date format. Use YYYY-MM-DD." });
+    return;
+  }
+
+  const todaySg = singaporeTodayIso();
+  if (todaySg && String(date) < todaySg) {
+    res.status(400).json({ message: "Booking date cannot be before today (Singapore time)." });
     return;
   }
 
@@ -1116,6 +1223,7 @@ app.put("/api/bookings/:id", (req, res) => {
         startTs,
         endTs
       );
+      invalidateSearchCache();
       res.json({
         id: `B-${bookingIdNumeric}`,
         facilityId: bookingRow.facility_code,
@@ -1179,6 +1287,7 @@ app.put("/api/bookings/:id", (req, res) => {
   booking.date = date;
   booking.start = start;
   booking.end = end;
+  invalidateSearchCache();
 
   res.json({
     id: booking.id,
@@ -1187,129 +1296,333 @@ app.put("/api/bookings/:id", (req, res) => {
     start: booking.start,
     end: booking.end,
     userEmail: booking.userEmail,
-    status: booking.status || "active",
+    status: String(booking.status || "active").toLowerCase(),
     reason: booking.reason,
   });
 });
 
-app.delete("/api/bookings/:id", (req, res) => {
-  const bookingIdRaw = String(req.params.id || "").trim();
-  const bookingIdNumeric = Number(bookingIdRaw.replace(/^B-/i, ""));
-  const userEmail = String(req.headers["x-user-email"] || "").trim();
+app.delete("/api/bookings/:id", authenticateToken, (req, res) => {
+  const bookingId = req.params.id
+  const userEmail = String(req.user?.email || "").trim().toLowerCase()
 
   if (!userEmail) {
-    res.status(401).json({ message: "Please log in to cancel bookings." });
-    return;
+    res.status(401).json({ message: "Please log in to cancel bookings." })
+    return
   }
 
   const db = getDb();
   if (db) {
     try {
-      if (!Number.isFinite(bookingIdNumeric) || bookingIdNumeric <= 0) {
-        res.status(400).json({ message: "Invalid booking id." });
-        return;
+      let numericId;
+      if (typeof bookingId === "string" && bookingId.startsWith("B-")) {
+        numericId = Number(bookingId.slice(2));
+      } else {
+        numericId = Number(bookingId);
       }
 
-      const bookingRow = db
-        .prepare(
-          `SELECT b.booking_id,
-                  b.status,
-                  u.email AS user_email
-           FROM bookings b
-           JOIN users u ON u.user_id = b.user_id
-           WHERE b.booking_id = ?`
-        )
-        .get(bookingIdNumeric);
-
+      if (!Number.isFinite(numericId) || numericId <= 0) {
+        res.status(400).json({ message: "Invalid booking ID." });
+        return;
+      }
+      const bookingRow = db.prepare(`SELECT b.*, u.email FROM bookings b JOIN users u ON b.user_id = u.user_id WHERE b.booking_id = ?`).get(numericId);
       if (!bookingRow) {
         res.status(404).json({ message: "Booking not found." });
         return;
       }
 
-      if (String(bookingRow.user_email).toLowerCase() !== userEmail.toLowerCase()) {
+      if (bookingRow.email !== userEmail) {
         res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
         return;
       }
 
-      if (String(bookingRow.status || "").toLowerCase() === "cancelled") {
+      if (bookingRow.status === 'CANCELLED') {
         res.json({ message: "This booking is already cancelled." });
         return;
       }
 
-      db.prepare(`UPDATE bookings SET status = 'cancelled' WHERE booking_id = ?`).run(bookingIdNumeric);
+      const cancelResult = db.transaction(() => {
+        let refundedCredits = 0;
+        let creditsRemaining = null;
 
-      console.log("BOOKING_CANCELLED", {
-        bookingId: `B-${bookingIdNumeric}`,
-        userEmail,
-        timestamp: new Date().toISOString(),
-      });
+        if (String(bookingRow.booking_role || "").toLowerCase() === "student") {
+          const startRow = db
+            .prepare(`SELECT MIN(start_time) AS start_time FROM booking_detail WHERE booking_id = ?`)
+            .get(numericId);
+          const refundAmount = getCancellationCreditRefund(
+            startRow?.start_time,
+            bookingRow.credits_charged,
+            bookingRow.credits_refunded
+          );
 
+          if (refundAmount > 0) {
+            const refundResult = refundCredits(userEmail, refundAmount, { db });
+            refundedCredits = refundResult.refunded;
+            creditsRemaining = refundResult.remaining;
+          } else {
+            creditsRemaining = getStudentBalance(userEmail, { db });
+          }
+        }
+
+        db.prepare(
+          `UPDATE bookings
+           SET status = 'CANCELLED',
+               credits_refunded = credits_refunded + ?
+           WHERE booking_id = ?`
+        ).run(refundedCredits, numericId);
+
+        return { refundedCredits, creditsRemaining };
+      })();
+      insertAuditLog(db, 'CANCEL', userEmail, numericId, { bookingId });
+      invalidateSearchCache();
       res.json({
         message: "Booking cancelled successfully.",
+        refundedCredits: cancelResult.refundedCredits,
+        creditsRemaining: cancelResult.creditsRemaining,
         booking: {
-          id: `B-${bookingIdNumeric}`,
+          id: bookingId,
           userEmail,
           status: "cancelled",
         },
       });
       return;
     } catch (e) {
-      res.status(500).json({ message: e?.message || "Cancellation failed." });
+      console.error("Error cancelling booking in DB:", e);
+      res.status(500).json({ message: "An error occurred while cancelling the booking." });
       return;
     }
   }
 
-  const bookingIdString = String(bookingIdRaw);
-  const normalizedBookingId = bookingIdString.startsWith("B-")
-    ? bookingIdString
-    : `B-${bookingIdString}`;
+  const bookingIndex = BOOKINGS.findIndex((b) => b.id === bookingId)
 
-  const bookingIndex = BOOKINGS.findIndex(
-    (b) => b.id === bookingIdString || b.id === normalizedBookingId
-  );
   if (bookingIndex === -1) {
-    res.status(404).json({ message: "Booking not found." });
-    return;
+    res.status(404).json({ message: "Booking not found." })
+    return
   }
 
-  const booking = BOOKINGS[bookingIndex];
+  const booking = BOOKINGS[bookingIndex]
 
-  if (String(booking.userEmail).toLowerCase() !== userEmail.toLowerCase()) {
-    res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." });
-    return;
+  // AC2 — user must own the booking
+  if (booking.userEmail !== userEmail) {
+    res.status(403).json({ message: "Unauthorised: cannot cancel another user's booking." })
+    return
   }
 
+  // AC6 — idempotent cancellation
   if (booking.status === "cancelled") {
-    res.json({ message: "This booking is already cancelled." });
-    return;
+    res.json({ message: "This booking is already cancelled." })
+    return
   }
 
-  booking.status = "cancelled";
+  // AC3 + AC4 — mark cancelled and free slot
+  booking.status = "cancelled"
 
+  let refundedCredits = 0
+  let creditsRemaining = null
+  if (String(booking.userRole || "").toLowerCase() === "student") {
+    const bookingStartMinutes = toMinutes(booking.start)
+    const bookingStartIso = bookingStartMinutes === null
+      ? null
+      : toIsoUtcFromDateAndMinutes(booking.date, bookingStartMinutes)
+    const refundAmount = getCancellationCreditRefund(
+      bookingStartIso,
+      booking.creditsCharged,
+      booking.creditsRefunded
+    )
+    if (refundAmount > 0) {
+      const refundResult = refundCredits(userEmail, refundAmount)
+      refundedCredits = refundResult.refunded
+      creditsRemaining = refundResult.remaining
+      booking.creditsRefunded = (Number(booking.creditsRefunded) || 0) + refundedCredits
+    } else {
+      creditsRemaining = getStudentBalance(userEmail)
+    }
+  }
+
+  // AC8 — audit logging
   console.log("BOOKING_CANCELLED", {
-    bookingId: bookingIdRaw,
+    bookingId,
     userEmail,
     timestamp: new Date().toISOString(),
+  })
+
+  invalidateSearchCache();
+
+  res.json({ message: "Booking cancelled successfully.", refundedCredits, creditsRemaining, booking })
+})
+
+app.get("/api/admin/logs", authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  const db = getDb();
+  if (!db) {
+    res.status(500).json({ message: "Database not available" });
+    return;
+  }
+
+  try {
+    const action = req.query.action;
+    const userEmail = req.query.user_email;
+    const startDate = req.query.start_date;
+    const endDate = req.query.end_date;
+
+    let where = [];
+    let params = [];
+    if (action) {
+      where.push("action = ?");
+      params.push(action);
+    }
+    if (userEmail) {
+      where.push("user_email = ?");
+      params.push(userEmail);
+    }
+    if (startDate) {
+      where.push("timestamp >= ?");
+      params.push(startDate + 'T00:00:00Z');
+    }
+    if (endDate) {
+      where.push("timestamp <= ?");
+      params.push(endDate + 'T23:59:59Z');
+    }
+
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = selectAuditLogs(db, whereSql, params);
+
+    res.json({ logs: rows });
+  } catch (e) {
+    console.error("Error fetching admin logs:", e);
+    res.status(500).json({ message: "Failed to fetch logs" });
+  }
+});
+
+app.get("/api/me/credits", authenticateToken, (req, res) => {
+  const email = normalizeEmail(req.user?.email);
+  const role = String(req.user?.role || "user").toLowerCase();
+  const db = getDb();
+
+  if (!email) {
+    return res.status(401).json({ message: "Authenticated user email is required." });
+  }
+
+  return res.json({
+    email,
+    role,
+    creditsRemaining: role === "student" ? getStudentBalance(email, { db }) : null,
+  });
+});
+
+app.post("/api/login", async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const password = String(req.body?.password || "");
+
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required." });
+  }
+
+  if (isLockedOut(email)) {
+    const remainingSec = Math.ceil(getRemainingLockoutMs(email) / 1000);
+    const remainingMin = Math.ceil(remainingSec / 60);
+    return res.status(429).json({
+      error: "LOGIN_LOCKED",
+      message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
+      retryAfterSeconds: remainingSec,
+    });
+  }
+
+  const db = getDb();
+  if (!db) {
+    return res.status(503).json({ message: "Authentication database unavailable." });
+  }
+
+  try {
+    const user = db
+      .prepare(
+        `SELECT user_id, first_name, last_name, email, role, password_hash
+         FROM users
+         WHERE lower(email) = ?
+         LIMIT 1`
+      )
+      .get(email);
+
+    if (!user?.password_hash) {
+      const failure = recordFailedLogin(email);
+      if (failure.lockedUntil && Date.now() < failure.lockedUntil) {
+        const remainingSec = Math.ceil(getRemainingLockoutMs(email) / 1000);
+        const remainingMin = Math.ceil(remainingSec / 60);
+        return res.status(429).json({
+          error: "LOGIN_LOCKED",
+          message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
+          retryAfterSeconds: remainingSec,
+        });
+      }
+
+      return res.status(401).json({
+        message: "Invalid email or password.",
+        attemptsRemaining: Math.max(0, MAX_LOGIN_FAILURES - failure.count),
+      });
+    }
+
+    const passwordMatches = await verifyPassword(password, user.password_hash);
+    if (!passwordMatches) {
+      const failure = recordFailedLogin(email);
+      if (failure.lockedUntil && Date.now() < failure.lockedUntil) {
+        const remainingSec = Math.ceil(getRemainingLockoutMs(email) / 1000);
+        const remainingMin = Math.ceil(remainingSec / 60);
+        return res.status(429).json({
+          error: "LOGIN_LOCKED",
+          message: `Account locked after too many failed attempts. Please try again in ${remainingMin} minute${remainingMin === 1 ? "" : "s"}.`,
+          retryAfterSeconds: remainingSec,
+        });
+      }
+
+      return res.status(401).json({
+        message: "Invalid email or password.",
+        attemptsRemaining: Math.max(0, MAX_LOGIN_FAILURES - failure.count),
+      });
+    }
+
+    resetFailureCount(email);
+
+    const role = String(user.role || "student").toLowerCase();
+    const token = jwt.sign({ email: user.email, role }, JWT_SECRET, { expiresIn: "1h" });
+
+    return res.json({
+      email: user.email,
+      role,
+      token,
+      name: `${user.first_name} ${user.last_name}`.trim(),
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error?.message || "Unable to sign in." });
+  }
+});
+
+if (process.env.NODE_ENV !== 'production') {
+  app.delete("/__debug/delete-test", (req, res) => {
+    res.json({ ok: true, method: "DELETE" })
   });
 
-  res.json({ message: "Booking cancelled successfully.", booking });
-})
+  app.post("/__debug/login", (req, res) => {
+    const { email, role } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+    const token = jwt.sign({ email, role: role || 'user' }, JWT_SECRET, { expiresIn: '1h' });
+    res.json({ token });
+  });
 
-app.delete("/__debug/delete-test", (req, res) => {
-  res.json({ ok: true, method: "DELETE" })
-})
+  app.get("/__debug/routes", (req, res) => res.json({ ok: true }));
+}
 
 app.get("/", (req, res) => {
   res.send("FBS 2.0 backend running");
 });
 
-app.get("/__debug/routes", (req, res) => res.json({ ok: true }));
-
 if (require.main === module) {
-  app.listen(3001, () => {
-    console.log("Backend running on port 3001");
+  const port = Number(process.env.PORT) || 3001;
+  app.listen(port, () => {
+    console.log(`Backend running on port ${port}`);
   });
-} else {
-  // when the file is required (e.g. from tests) we just export the app
-  module.exports = app;
 }
+
+module.exports = app;

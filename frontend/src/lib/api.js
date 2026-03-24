@@ -7,16 +7,21 @@ function buildUrl(path) {
 async function request(path, { method = 'GET', body, headers } = {}) {
   const res = await fetch(buildUrl(path), {
     method,
-   headers: {
-  ...(body ? { 'Content-Type': 'application/json' } : {}),
-  ...(headers || {}),
-},
+    headers: {
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...getAuthHeaders(),
+      ...(headers || {}),
+    },
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  const contentType = res.headers.get('content-type') || ''
-  const isJson = contentType.includes('application/json')
-  const payload = isJson ? await res.json().catch(() => null) : await res.text().catch(() => null)
+  const contentType = res.headers?.get?.('content-type') || ''
+  const isJson = contentType.includes('application/json') || typeof res.json === 'function'
+  const payload = isJson
+    ? await res.json().catch(() => null)
+    : typeof res.text === 'function'
+      ? await res.text().catch(() => null)
+      : null
 
   if (!res.ok) {
     const message = payload?.message || payload?.error || `Request failed (${res.status})`
@@ -68,10 +73,30 @@ export function createBooking(payload) {
   return request('/api/bookings', { method: 'POST', body: payload })
 }
 
-export function getBookings(userEmail) {
-  const headers = userEmail ? { 'x-user-email': userEmail } : undefined
-  return request('/api/bookings', { headers })
+export function loginUser(payload) {
+  return request('/api/login', { method: 'POST', body: payload }).catch((err) => {
+    if (err && typeof err === 'object' && ('status' in err || 'data' in err)) {
+      const message = err.message && !String(err.message).startsWith('Request failed')
+        ? err.message
+        : 'Invalid email or password.'
+      throw Object.assign(new Error(message), {
+        status: err.status,
+        data: err.data,
+      })
+    }
+
+    throw err
+  })
 }
+
+export function getBookings() {
+  return request('/api/bookings')
+}
+
+export function getMyCredits() {
+  return request('/api/me/credits')
+}
+
 export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }) {
   const sp = new URLSearchParams()
   if (ids?.length) sp.set('ids', ids.join(','))
@@ -82,17 +107,15 @@ export function getAvailabilityGlimpse({ ids, date, start, duration, limit = 3 }
   return request(`/api/availability-glimpse?${sp.toString()}`)
 }
 
-export function cancelBooking(id, userEmail) {
+export function cancelBooking(id) {
   return request(`/api/bookings/${encodeURIComponent(id)}`, {
     method: 'DELETE',
-    headers: { 'x-user-email': userEmail },
   })
 }
 
-export function modifyBooking(id, payload, userEmail) {
+export function modifyBooking(id, payload) {
   return request(`/api/bookings/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body: payload,
-    headers: { 'x-user-email': userEmail },
   })
 }

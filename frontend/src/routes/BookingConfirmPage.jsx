@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import AppShell from '../components/AppShell'
 import { createBooking, getFacility } from '../lib/api'
-import { parseTimeToMinutes } from '../lib/time'
+import { isoToday, parseTimeToMinutes } from '../lib/time'
 import useAuth from '../lib/useAuth'
 
 const MAX_BOOKING_MINUTES = 180
@@ -35,6 +35,12 @@ export default function BookingConfirmPage() {
     return ''
   }, [start, end])
 
+  const dateError = useMemo(() => {
+    if (!date) return 'Invalid booking date'
+    if (date < isoToday()) return "You can't book a past date/time"
+    return ''
+  }, [date])
+
   const calendarUrl = useMemo(() => {
     const next = new URLSearchParams()
     if (returnContext) {
@@ -65,11 +71,11 @@ export default function BookingConfirmPage() {
     }
   }, [facilityId])
 
-  const userRole = user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff'
+  const userRole = user.role || (user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff')
 
   const submit = async () => {
-    if (durationError) {
-      alert(durationError)
+    if (durationError || dateError) {
+      alert(durationError || dateError)
       return
     }
     if (!reasonTrimmed) {
@@ -84,7 +90,6 @@ export default function BookingConfirmPage() {
         date,
         start,
         end,
-        userEmail,
         reason: reasonTrimmed,
         userRole,
       })
@@ -139,10 +144,10 @@ export default function BookingConfirmPage() {
                 </div>
               </div>
 
-              {durationError ? (
+              {durationError || dateError ? (
                 <div className="alert alertDanger" role="status" aria-live="polite">
                   <div className="alertTitle">Cannot book this time</div>
-                  <div className="muted">{durationError}.</div>
+                  <div className="muted">{durationError || dateError}.</div>
                 </div>
               ) : null}
 
@@ -175,7 +180,7 @@ export default function BookingConfirmPage() {
                 <Link className="btn" to={calendarUrl}>
                   Change time
                 </Link>
-                <button className="btn btnPrimary" onClick={submit} disabled={!ack || !reasonTrimmed || isSubmitting || !userEmail || Boolean(durationError)}>
+                <button className="btn btnPrimary" onClick={submit} disabled={!ack || !reasonTrimmed || isSubmitting || !userEmail || Boolean(durationError) || Boolean(dateError)}>
                   {isSubmitting ? 'Booking…' : 'Confirm booking'}
                 </button>
               </div>

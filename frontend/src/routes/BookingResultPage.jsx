@@ -12,7 +12,7 @@ export default function BookingResultPage({ variant }) {
   const [toastData, setToastData] = useState(() => {
     if (!(variant === 'success' && location.state?.financial)) return null
     const financial = location.state.financial
-    const userRole = user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff'
+    const userRole = user.role || (user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff')
     return {
       userRole,
       creditsInfo: financial.deducted !== undefined ? { deducted: financial.deducted, creditsRemaining: financial.creditsRemaining } : null,
