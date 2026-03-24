@@ -40,3 +40,24 @@ export function clearStoredUser() {
   localStorage.removeItem(AUTH_STORAGE.tokenKey)
   localStorage.removeItem(AUTH_STORAGE.roleKey)
 }
+
+export function getAuthHeaders() {
+  const token = (localStorage.getItem(AUTH_STORAGE.tokenKey) || '').trim()
+  if (token) {
+    return { Authorization: `Bearer ${token}` }
+  }
+
+  const userStr = localStorage.getItem('user')
+  if (!userStr) return {}
+
+  try {
+    const user = JSON.parse(userStr)
+    if (user?.token) {
+      return { Authorization: `Bearer ${user.token}` }
+    }
+  } catch {
+    return {}
+  }
+
+  return {}
+}
