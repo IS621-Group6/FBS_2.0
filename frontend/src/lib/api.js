@@ -1,7 +1,13 @@
-const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/$/, '')
+const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim().replace(/\/+$/, '')
 
 function buildUrl(path) {
-  return API_BASE_URL ? `${API_BASE_URL}${path}` : path
+  if (!API_BASE_URL) return path
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  try {
+    return new URL(normalizedPath, API_BASE_URL).toString()
+  } catch {
+    return `${API_BASE_URL}${normalizedPath}`
+  }
 }
 
 async function request(path, { method = 'GET', body, headers } = {}) {
