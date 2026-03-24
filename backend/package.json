@@ -7,6 +7,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "jest",
+    "coverage": "jest --runInBand --coverage --coverageReporters=text --coverageReporters=html",
     "init-db": "node scripts/init-sqlite.js",
     "perf:smoke": "node scripts/perf-smoke.js"
   },

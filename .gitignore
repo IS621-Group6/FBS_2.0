@@ -8,6 +8,7 @@
 # build outputs
 **/dist/
 **/build/
+**/coverage/
 
 # generated local SQLite database files
 **/*.sqlite
