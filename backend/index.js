@@ -39,6 +39,19 @@ const compression = require("compression");
 const NodeCache = require("node-cache");
 
 const app = express();
+const envJwtSecret = process.env.JWT_SECRET;
+const isTest = process.env.NODE_ENV === "test";
+const isProduction = process.env.NODE_ENV === "production";
+const DEFAULT_DEV_ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "http://localhost:3001",
+  "http://127.0.0.1:3001",
+  "http://localhost:4173",
+  "http://127.0.0.1:4173",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
 const globalLimiter = rateLimit({
   windowMs: Number(process.env.RATE_LIMIT_WINDOW) || 60000,
   max: Number(process.env.RATE_LIMIT_GLOBAL) || 100,
@@ -73,6 +86,43 @@ const searchLimiter = rateLimit({
 
 const searchCache = new NodeCache({ stdTTL: 60 });
 
+function parseAllowedOrigins(rawValue) {
+  return String(rawValue || "")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+const configuredAllowedOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGINS);
+const allowedOrigins = new Set(
+  configuredAllowedOrigins.length > 0
+    ? configuredAllowedOrigins
+    : isProduction
+      ? []
+      : DEFAULT_DEV_ALLOWED_ORIGINS
+);
+
+if (!envJwtSecret && !isProduction && !isTest) {
+  console.warn("[SECURITY] JWT_SECRET not set; using an ephemeral development secret.");
+}
+
+if (!isProduction && !isTest && configuredAllowedOrigins.length === 0) {
+  console.warn("[SECURITY] ALLOWED_ORIGINS not set; defaulting CORS to local development origins.");
+}
+
+const JWT_SECRET = envJwtSecret || crypto.randomBytes(32).toString("hex");
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    callback(null, allowedOrigins.has(origin));
+  },
+};
+
 app.use(compression());
 
 app.use((req, res, next) => {
@@ -86,11 +136,8 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
-
-const envJwtSecret = process.env.JWT_SECRET;
-const isProduction = process.env.NODE_ENV === "production";
 
 function globalLimiterUnlessSearch(req, res, next) {
   if (req.method === "GET" && req.path === "/api/facilities") {
@@ -106,9 +153,7 @@ if (isProduction && !envJwtSecret) {
   throw new Error("JWT_SECRET environment variable must be set in production.");
 }
 
-const JWT_SECRET = envJwtSecret || "demo-secret-key";
-
-const { authenticateToken, resolveRequestUserEmail } = createRequestAuthHelpers({
+const { authenticateToken } = createRequestAuthHelpers({
   jwtSecret: JWT_SECRET,
   normalizeEmail,
 });

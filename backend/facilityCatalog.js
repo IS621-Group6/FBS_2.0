@@ -30,7 +30,7 @@ function inferFloorFromName(name) {
   // Level formats:
   // - "2-1", "3-01", "4.01"
   // - "2.1" (phone booth)
-  const levelDelimited = s.match(/\b(\d{1,2})(?=[\-\.])/);
+  const levelDelimited = s.match(/\b(\d{1,2})(?=[-.])/);
   if (levelDelimited?.[1]) {
     const n = Number(levelDelimited[1]);
     if (Number.isFinite(n) && n > 0) return n;

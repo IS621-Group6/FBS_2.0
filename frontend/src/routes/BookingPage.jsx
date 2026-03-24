@@ -67,8 +67,9 @@ export default function BookingPage() {
       setError(e?.message || 'Search failed')
       setFacilities([])
     } finally {
-      if (requestId !== latestSearchRequestRef.current) return
-      setIsSearching(false)
+      if (requestId === latestSearchRequestRef.current) {
+        setIsSearching(false)
+      }
     }
   }
 

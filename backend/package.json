@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "lint": "eslint .",
     "test": "jest",
     "init-db": "node scripts/init-sqlite.js",
     "perf:smoke": "node scripts/perf-smoke.js"
@@ -27,7 +28,10 @@
     "nodemon": "^3.1.11"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "autocannon": "^8.0.0",
+    "eslint": "^10.1.0",
+    "globals": "^17.4.0",
     "jest": "^29.7.0",
     "supertest": "^7.2.2"
   }

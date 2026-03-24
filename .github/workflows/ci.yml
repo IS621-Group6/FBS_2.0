@@ -9,6 +9,29 @@ on:
       - "**"
 
 jobs:
+  frontend-lint:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci || npm install
+
+      - name: Run frontend lint
+        run: npm run lint
+
   frontend-build:
     name: Frontend Build
     runs-on: ubuntu-latest
@@ -55,6 +78,52 @@ jobs:
       - name: Run frontend tests
         run: npm test
 
+  frontend-security-audit:
+    name: Frontend Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci || npm install
+
+      - name: Audit frontend production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+  backend-lint:
+    name: Backend Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci || npm install
+
+      - name: Run backend lint
+        run: npm run lint
+
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
@@ -80,6 +149,29 @@ jobs:
 
       - name: Run backend tests
         run: npm test
+
+  backend-security-audit:
+    name: Backend Security Audit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci || npm install
+
+      - name: Audit backend production dependencies
+        run: npm audit --omit=dev --audit-level=high
 
   backend-performance:
     name: Backend Performance Smoke

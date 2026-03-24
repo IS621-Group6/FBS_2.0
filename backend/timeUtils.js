@@ -17,7 +17,7 @@ function singaporeTodayIso() {
     if (day && month && year) {
       return `${year}-${month}-${day}`;
     }
-  } catch (e) {
+  } catch (_error) {
     // Fall through to UTC+8 fallback.
   }
 
