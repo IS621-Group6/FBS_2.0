@@ -71,7 +71,7 @@ export default function BookingConfirmPage() {
     }
   }, [facilityId])
 
-  const userRole = user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff'
+  const userRole = user.role || (user.email === 'guest@smu.edu.sg' || user.email.endsWith('@smu.edu.sg') ? 'student' : 'staff')
 
   const submit = async () => {
     if (durationError || dateError) {
